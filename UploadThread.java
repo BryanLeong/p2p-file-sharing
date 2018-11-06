@@ -24,7 +24,7 @@ class UploadThread extends Thread {
 
     public void run() {
         for (byte[] chunk : chunks) {
-            DatagramPacket packet = new DatagramPacket(bytes, chunk.length, address, 8001);
+            DatagramPacket packet = new DatagramPacket(chunk, chunk.length, address, 8001);
             try {
                 socket.send(packet);
             } catch (IOException e) {

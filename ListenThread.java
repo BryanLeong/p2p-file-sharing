@@ -13,8 +13,8 @@ import java.util.HashSet;
 
 class ListenThread extends Thread {
     private DatagramSocket socket;
-    private ConcurrentHashMap chunkMap;
-    private ConcurrentHashMap peerMap;
+    private ConcurrentHashMap<String, byte[]> chunkMap;
+    private ConcurrentHashMap<String, Set<String>> peerMap;
 
     public ListenThread(ConcurrentHashMap<String, byte[]> chunkMap, ConcurrentHashMap<String, Set<String>> peerMap) {
         this.chunkMap = chunkMap;
@@ -28,10 +28,10 @@ class ListenThread extends Thread {
 
     private void storePeerChunkList(String peer, String data) {
         Set<String> peerChunkSet = new HashSet<String>(Arrays.asList(data.split(",")));
-        if (peerMap.containsKey(address)) {
-            peerMap.replace(address, peerChunkSet);
+        if (peerMap.containsKey(peer)) {
+            peerMap.replace(peer, peerChunkSet);
         } else {
-            peerMap.put(address, peerChunkSet);
+            peerMap.put(peer, peerChunkSet);
         }
     }
 
@@ -58,17 +58,18 @@ class ListenThread extends Thread {
                 storePeerChunkList(peer, data[1]);
                 // Reply with list of available chunks
                 String reply = "list," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
-                replyBytes = reply.getBytes();
+                byte[] replyBytes = reply.getBytes();
                 try {
                     InetAddress address = InetAddress.getByName(peer);
                     packet = new DatagramPacket(replyBytes, replyBytes.length, address, 8000);
-                } catch (IOException | UnknownHostException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
                 break;
             case "request":
                 // Get batch of requested chunks
-                List chunks = new ArrayList<byte[]>();
+                List<byte[]> chunks = new ArrayList<byte[]>();
+                byte[] chunk;
                 for (String chunkNum : data[1].split(",")) {
                     chunk = chunkMap.get(chunkNum);
                     chunks.add(chunk);
@@ -85,5 +86,10 @@ class ListenThread extends Thread {
                 break;
             }
         }
+    }
+
+    public static void main(String[] args) {
+        ListenThread lt = new ListenThread(null, null);
+        lt.start();
     }
 }
