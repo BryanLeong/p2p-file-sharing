@@ -62,6 +62,7 @@ class ListenThread extends Thread {
                 try {
                     InetAddress address = InetAddress.getByName(peer);
                     packet = new DatagramPacket(replyBytes, replyBytes.length, address, 8000);
+                    socket.send(packet);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
