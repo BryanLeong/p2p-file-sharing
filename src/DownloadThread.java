@@ -4,12 +4,15 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 
 class DownloadThread extends Thread {
     private DatagramSocket socket;
+    private ConcurrentHashMap<String, byte[]> chunkMap;
     private int chunkSize = 1024;
 
-    public DownloadThread() {
+    public DownloadThread(ConcurrentHashMap<String, byte[]> chunkMap) {
+        this.chunkMap = chunkMap;
         try {
             socket = new DatagramSocket(8001);
         } catch (SocketException e) {
@@ -27,11 +30,10 @@ class DownloadThread extends Thread {
                 e.printStackTrace();
             }
 
-            byte[] data = packet.getData();
-            int chunkNum = ByteBuffer.wrap(data).getInt();
-            data = Arrays.copyOfRange(data, 4, data.length);
-
-            // Store received chunkNum and data in some form of shared memory
+            byte[] chunk = packet.getData();
+            int chunkNum = ByteBuffer.wrap(chunk).getInt();
+            chunk = Arrays.copyOfRange(chunk, 4, chunk.length);
+            chunkMap.putIfAbsent(String.valueOf(chunkNum), chunk);
         }
     }
 }

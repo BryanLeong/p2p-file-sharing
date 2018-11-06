@@ -3,7 +3,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -53,38 +52,38 @@ class ListenThread extends Thread {
             data = (new String(packet.getData())).trim().split(",", 2);
 
             switch (data[0]) {
-            case "query":
-                // Store peer's list of chunks
-                storePeerChunkList(peer, data[1]);
-                // Reply with list of available chunks
-                String reply = "list," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
-                byte[] replyBytes = reply.getBytes();
-                try {
-                    InetAddress address = InetAddress.getByName(peer);
-                    packet = new DatagramPacket(replyBytes, replyBytes.length, address, 8000);
-                    socket.send(packet);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                break;
-            case "request":
-                // Get batch of requested chunks
-                List<byte[]> chunks = new ArrayList<byte[]>();
-                byte[] chunk;
-                for (String chunkNum : data[1].split(",")) {
-                    chunk = chunkMap.get(chunkNum);
-                    chunks.add(chunk);
-                }
-                // Start new UploadThread to send chunks to requester
-                Thread uploadThread = new UploadThread(peer, chunks);
-                uploadThread.start();
-                break;
-            case "list":
-                // Store peer's list of chunks
-                storePeerChunkList(peer, data[1]);
-                break;
-            default:
-                break;
+                case "query":
+                    // Store peer's list of chunks
+                    storePeerChunkList(peer, data[1]);
+                    // Reply with list of available chunks
+                    String reply = "list," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
+                    byte[] replyBytes = reply.getBytes();
+                    try {
+                        InetAddress address = InetAddress.getByName(peer);
+                        packet = new DatagramPacket(replyBytes, replyBytes.length, address, 8000);
+                        socket.send(packet);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "request":
+                    // Get batch of requested chunks
+                    List<byte[]> chunks = new ArrayList<byte[]>();
+                    byte[] chunk;
+                    for (String chunkNum : data[1].split(",")) {
+                        chunk = chunkMap.get(chunkNum);
+                        chunks.add(chunk);
+                    }
+                    // Start new UploadThread to send chunks to requester
+                    Thread uploadThread = new UploadThread(peer, chunks);
+                    uploadThread.start();
+                    break;
+                case "list":
+                    // Store peer's list of chunks
+                    storePeerChunkList(peer, data[1]);
+                    break;
+                default:
+                    break;
             }
         }
     }
