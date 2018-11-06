@@ -87,9 +87,4 @@ class ListenThread extends Thread {
             }
         }
     }
-
-    public static void main(String[] args) {
-        ListenThread lt = new ListenThread(null, null);
-        lt.start();
-    }
 }
