@@ -1,8 +1,6 @@
 import java.io.IOException;
 import java.net.*;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -31,6 +29,85 @@ class RequestThread extends Thread {
         }
     }
 
+    // The list this method returns starts with the rarest chunk and ends with the most common.
+    // Instead of taking peerMap, we can take calculate for each peer his availability of each chunk.
+    // then we sum up all the availabilities of all peers.
+    List<Integer> chunkRarity(String fileName){
+
+        int[] occurrences = null;
+        // occurrences is an array of size=no_of_chunks, where the index corresponds to the chunk number and
+        //  the value corresponds to the availability (number of hosts who own it) of that chunk.
+
+        for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {
+            Set<String> peerFiles = entry.getValue();
+            for (String file : peerFiles) {
+                String[] parts = file.split("/"); //parts should have length of 3.
+                if(!fileName.equals(parts[0]))
+                    continue;
+                if (occurrences == null){
+                    // Assigns the number of chunks to be the size of the array
+                    // Can throw index out of range or wrong type errors
+                    occurrences = new int[Integer.valueOf(parts[1])];
+                }
+
+                String[] chunks = parts[2].split(",");
+                for (String chunk : chunks){
+                    int chunkNo = Integer.valueOf(chunk);
+                    occurrences[chunkNo]++;
+                }
+            }
+        }
+        // Shouldn't happen
+        if(occurrences == null) return null;
+
+        // To return, we are converting the list from size=no_of_chunks and value = availability to
+        //  List[List] where the index of the outer list refers to the availability and
+        //  the inner list represents the chunks.
+        List<ArrayList<Integer>> availabilityList = new ArrayList<ArrayList<Integer>>();
+
+        // Array initialisation
+        for (int i = 0; i <= peerMap.size(); i++) {
+            availabilityList.add(new ArrayList<>());
+//            System.out.println(output.size());
+        }
+
+        // We add all chunks sorted by their occurrences
+        int i = 0;
+        while (occurrences.length > i){
+//            System.out.println(occurrences[i]);
+            try {
+                availabilityList.get(occurrences[i]).add(i);
+//                System.out.println(output.get(occurrences[i]));
+            } catch (IndexOutOfBoundsException e){
+                availabilityList.get(availabilityList.size()-1).add(i);
+            }
+            i++;
+        }
+
+        // We concatenate all the lists together to form a list of all the chunks sorted by their rarity.
+        List<Integer> sortedList = new ArrayList<>();
+        for (ArrayList<Integer> smallList : availabilityList){
+            sortedList.addAll(smallList);
+        }
+
+//        System.out.println(new ArrayList<>(Arrays.asList(occurrences)));
+        return sortedList;
+    }
+
+    public static void main(String[] args) {
+        ConcurrentHashMap<String, Set<String>> peerMap = new ConcurrentHashMap<>();
+        Set<String> testSet = new HashSet<>();
+        Set<String> testSet2 = new HashSet<>();
+        testSet.add("a/8/1,2,3,5");
+        testSet.add("b/4/4,7");
+        testSet2.add("a/8/0,2,3,7");
+        peerMap.put("123", testSet);
+        peerMap.put("321", testSet2);
+        RequestThread test = new RequestThread(null,null, peerMap, null, null);
+        List<Integer> result = test.chunkRarity("a");
+        System.out.println(result);
+    }
+
     public void run() {
         String msg;
         InetAddress address;
@@ -49,13 +126,14 @@ class RequestThread extends Thread {
             e.printStackTrace();
         }
 
-        while (true) {
+        while (true) { // This while line should be changed to see if any peers have replied and have break condition?
             // If not currently downloading from any peer,
             for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {
                 String peer = entry.getKey();
                 if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(entry.getValue())) {
                     continue;
                 }
+                
                 // check which chunks peer has but we do not and are not currently downloading
 
                 // create batch of chunks based on scarcest-first algo
