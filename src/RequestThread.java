@@ -115,7 +115,7 @@ class RequestThread extends Thread {
         Set<String> batch;
 
         // Send 'query' message to broadcast address on startup to discover peers
-        msg = "query," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
+        msg = "query," + String.join(",", chunkMap.keySet());
         byte[] msgBytes = msg.getBytes();
         try {
             address = InetAddress.getByName("255.255.255.255");
