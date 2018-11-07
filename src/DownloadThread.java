@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,15 +10,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 class DownloadThread extends Thread {
     private DatagramSocket socket;
     private ConcurrentHashMap<String, byte[]> chunkMap;
+    private ConcurrentHashMap<String, Set<String>> peerMap;
     private ConcurrentHashMap<String, Set<String>> batchMap;
     private CopyOnWriteArrayList<String> requestedChunks;
     private int chunkSize;
 
     public DownloadThread(int chunkSize,
                           ConcurrentHashMap<String, byte[]> chunkMap,
+                          ConcurrentHashMap<String, Set<String>> peerMap,
                           ConcurrentHashMap<String, Set<String>> batchMap,
                           CopyOnWriteArrayList<String> requestedChunks) {
         this.chunkSize = chunkSize;
+        this.peerMap = peerMap;
         this.chunkMap = chunkMap;
         this.batchMap = batchMap;
         this.requestedChunks = requestedChunks;
@@ -50,6 +54,17 @@ class DownloadThread extends Thread {
             if (batchMap.get(peer).isEmpty()) {
                 batchMap.remove(peer);
                 // send all peers updated list of chunks
+                for (String peer1 : peerMap.keySet()) {
+                    String msg = "list," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
+                    byte[] msgBytes = msg.getBytes();
+                    try {
+                        InetAddress address = InetAddress.getByName(peer1);
+                        packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8000);
+                        socket.send(packet);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
             requestedChunks.remove(data[0]);
         }
