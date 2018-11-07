@@ -2,21 +2,26 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 class FileIOThread extends Thread {
     private ConcurrentHashMap<String, byte[]> chunkMap;
+    private File folder;
+    private List<File> fileList;
     private int chunkSize;
 
     public FileIOThread(int chunkSize,
                         ConcurrentHashMap<String, byte[]> chunkMap) {
         this.chunkSize = chunkSize;
         this.chunkMap = chunkMap;
+        folder = new File("files");
+        fileList = Arrays.asList(folder.listFiles());
+        populateChunkMap();
     }
 
     private void populateChunkMap() {
-        File folder = new File("files");
-        for (File file : folder.listFiles()) {
+        for (File file : fileList) {
             String fileName = file.getName();
             try {
                 byte[] fileBytes = Files.readAllBytes(file.toPath());
@@ -30,7 +35,9 @@ class FileIOThread extends Thread {
                     }
                     String chunkId = String.format("%s/%d/%d", fileName, totalChunks, i);
                     byte[] chunk = Arrays.copyOfRange(fileBytes, start, end);
-                    chunkMap.put(chunkId, chunk);
+                    if (!chunkMap.containsKey(chunkId)) {
+                        chunkMap.put(chunkId, chunk);
+                    }
                     start += chunkSize;
                 }
             } catch (IOException e) {
@@ -40,6 +47,22 @@ class FileIOThread extends Thread {
     }
 
     public void run() {
-        populateChunkMap();
+        while (true) {
+            // update chunkList if new files are added
+            List<File> newFileList = Arrays.asList(folder.listFiles());
+            if (!fileList.containsAll(newFileList)) {
+                fileList = newFileList;
+                populateChunkMap();
+            }
+
+            // if we have all chunks of a file, write it to disk
+            // else store chunks in a temp file on disk (update populateChunkMap() to read these as chunks as well)
+
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
