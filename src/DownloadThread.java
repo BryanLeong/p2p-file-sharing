@@ -47,6 +47,10 @@ class DownloadThread extends Thread {
 
             chunkMap.putIfAbsent(data[0], data[1].getBytes());
             batchMap.get(peer).remove(data[0]);
+            if (batchMap.get(peer).isEmpty()) {
+                batchMap.remove(peer);
+                // send all peers updated list of chunks
+            }
             requestedChunks.remove(data[0]);
         }
     }
