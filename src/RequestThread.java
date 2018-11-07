@@ -1,5 +1,7 @@
 import java.io.IOException;
 import java.net.*;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -32,6 +34,7 @@ class RequestThread extends Thread {
         String msg;
         InetAddress address;
         DatagramPacket packet;
+        Set<String> batch;
 
         // Send 'query' message to broadcast address on startup to discover peers
         msg = "query," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
@@ -47,22 +50,27 @@ class RequestThread extends Thread {
 
         while (true) {
             // If not currently downloading from any peer,
-            for (String peer : peerMap.keySet()) {
+            for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {
+                String peer = entry.getKey();
                 if (batchMap.containsKey(peer)) {
                     continue;
                 }
                 // check which chunks peer has but we do not and are not currently downloading
+
                 // create batch of chunks based on scarcest-first algo
+                batch = new HashSet<String>();
+
                 // send 'request' message to peer to initiate file transfer
+                String request = "request," + batch.toString().replaceAll("\\[|\\]", "");
+                byte[] requestBytes = request.getBytes();
+                try {
+                    address = InetAddress.getByName(peer);
+                    packet = new DatagramPacket(requestBytes, requestBytes.length, address, 8000);
+                    socket.send(packet);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
-    }
-
-    public static void main(String[] args) {
-        Thread rt = new RequestThread(new ConcurrentHashMap<String, byte[]>(),
-                new ConcurrentHashMap<String, Set<String>>(),
-                new ConcurrentHashMap<String, Set<String>>(),
-                new CopyOnWriteArrayList<String>());
-        rt.start();
     }
 }
