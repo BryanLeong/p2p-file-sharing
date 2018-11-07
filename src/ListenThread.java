@@ -24,7 +24,12 @@ class ListenThread extends Thread {
     }
 
     private void storePeerChunkList(String peer, String data) {
-        Set<String> peerChunkSet = new HashSet<String>(Arrays.asList(data.split(",")));
+        Set<String> peerChunkSet;
+        if (!data.isEmpty()) {
+            peerChunkSet = new HashSet<>(Arrays.asList(data.split(",")));
+        } else {
+            peerChunkSet = new HashSet<>();
+        }
         if (peerMap.containsKey(peer)) {
             peerMap.replace(peer, peerChunkSet);
         } else {
@@ -73,8 +78,10 @@ class ListenThread extends Thread {
                     break;
                 case "request":
                     // Get batch of requested chunks and start new UploadThread to send chunks to requester
-                    Thread uploadThread = new UploadThread(chunkMap, peer, data[1].split(","));
-                    uploadThread.start();
+                    if (!data[1].isEmpty()) {
+                        Thread uploadThread = new UploadThread(chunkMap, peer, data[1].split(","));
+                        uploadThread.start();
+                    }
                     break;
                 case "list":
                     // Store peer's list of chunks

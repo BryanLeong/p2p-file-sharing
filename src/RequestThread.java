@@ -52,7 +52,7 @@ class RequestThread extends Thread {
             // If not currently downloading from any peer,
             for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {
                 String peer = entry.getKey();
-                if (batchMap.containsKey(peer)) {
+                if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(entry.getValue())) {
                     continue;
                 }
                 // check which chunks peer has but we do not and are not currently downloading
