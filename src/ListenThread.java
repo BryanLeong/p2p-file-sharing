@@ -70,8 +70,8 @@ class ListenThread extends Thread {
                     // Get batch of requested chunks
                     List<byte[]> chunks = new ArrayList<byte[]>();
                     byte[] chunk;
-                    for (String chunkNum : data[1].split(",")) {
-                        chunk = chunkMap.get(chunkNum);
+                    for (String chunkId : data[1].split(",")) {
+                        chunk = chunkMap.get(chunkId);
                         chunks.add(chunk);
                     }
                     // Start new UploadThread to send chunks to requester
