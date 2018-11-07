@@ -1,8 +1,5 @@
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,29 +32,37 @@ class RequestThread extends Thread {
         String msg;
         InetAddress address;
         DatagramPacket packet;
+
+        // Send 'query' message to broadcast address on startup to discover peers
+        msg = "query," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
+        byte[] msgBytes = msg.getBytes();
+        try {
+            address = InetAddress.getByName("255.255.255.255");
+            packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8000);
+            socket.send(packet);
+            Thread.sleep(2000);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
         while (true) {
-            if (peerMap.isEmpty()) { // Check if list of peers is empty
-                // Send 'query' message to broadcast address
-                msg = "query," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
-                byte[] msgBytes = msg.getBytes();
-                try {
-                    address = InetAddress.getByName("255.255.255.255");
-                    packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8000);
-                    socket.send(packet);
-                } catch (IOException e) {
-                    e.printStackTrace();
+            // If not currently downloading from any peer,
+            for (String peer : peerMap.keySet()) {
+                if (batchMap.containsKey(peer)) {
+                    continue;
                 }
-            } else {
-                // If not currently downloading from any peer,
-                for (String peer : peerMap.keySet()) {
-                    if (batchMap.containsKey(peer)) {
-                        continue;
-                    }
-                    // check which chunks peer has but we do not and are not currently downloading
-                    // create batch of chunks based on scarcest-first algo
-                    // send 'request' message to peer to initiate file transfer
-                }
+                // check which chunks peer has but we do not and are not currently downloading
+                // create batch of chunks based on scarcest-first algo
+                // send 'request' message to peer to initiate file transfer
             }
         }
+    }
+
+    public static void main(String[] args) {
+        Thread rt = new RequestThread(new ConcurrentHashMap<String, byte[]>(),
+                new ConcurrentHashMap<String, Set<String>>(),
+                new ConcurrentHashMap<String, Set<String>>(),
+                new CopyOnWriteArrayList<String>());
+        rt.start();
     }
 }
