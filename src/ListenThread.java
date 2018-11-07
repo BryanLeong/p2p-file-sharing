@@ -48,7 +48,7 @@ class ListenThread extends Thread {
                 e.printStackTrace();
             }
 
-            peer = packet.getAddress().toString();
+            peer = packet.getAddress().getHostAddress();
             data = (new String(packet.getData())).trim().split(",", 2);
 
             switch (data[0]) {
@@ -86,5 +86,10 @@ class ListenThread extends Thread {
                     break;
             }
         }
+    }
+
+    public static void main(String[] args) {
+        Thread lt = new ListenThread(new ConcurrentHashMap<String, byte[]>(), new ConcurrentHashMap<String, Set<String>>());
+        lt.start();
     }
 }
