@@ -65,15 +65,7 @@ class ListenThread extends Thread {
                     // Store peer's list of chunks
                     storePeerChunkList(peer, data[1]);
                     // Reply with list of available chunks
-                    String reply = "list," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
-                    byte[] replyBytes = reply.getBytes();
-                    try {
-                        InetAddress address = InetAddress.getByName(peer);
-                        packet = new DatagramPacket(replyBytes, replyBytes.length, address, 8000);
-                        socket.send(packet);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    Common.updatePeerWithChunkList(socket, chunkMap, peer);
                     break;
                 case "request":
                     // Get batch of requested chunks and start new UploadThread to send chunks to requester

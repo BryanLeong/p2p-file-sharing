@@ -15,7 +15,7 @@ class App {
         CopyOnWriteArrayList<String> requestedChunks = new CopyOnWriteArrayList<>();
         int chunkSize = 1024;
 
-        (new FileIOThread(chunkSize, chunkMap)).start();
+        (new FileIOThread(chunkSize, localAddress, chunkMap, peerMap)).start();
         // wait for FileIOThread to populate chunkMap
         // to be replaced with some sort of synchronization barrier
         try {

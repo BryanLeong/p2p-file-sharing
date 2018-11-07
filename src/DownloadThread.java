@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,15 +54,7 @@ class DownloadThread extends Thread {
                 batchMap.remove(peer);
                 // send all peers updated list of chunks
                 for (String peer1 : peerMap.keySet()) {
-                    String msg = "list," + chunkMap.keySet().toString().replaceAll("\\[|\\]", "");
-                    byte[] msgBytes = msg.getBytes();
-                    try {
-                        InetAddress address = InetAddress.getByName(peer1);
-                        packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8000);
-                        socket.send(packet);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    Common.updatePeerWithChunkList(socket, chunkMap, peer1);
                 }
             }
             requestedChunks.remove(data[0]);

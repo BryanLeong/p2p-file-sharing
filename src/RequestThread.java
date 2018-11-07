@@ -140,7 +140,7 @@ class RequestThread extends Thread {
                 batch = new HashSet<String>();
 
                 // send 'request' message to peer to initiate file transfer
-                String request = "request," + batch.toString().replaceAll("\\[|\\]", "");
+                String request = "request," + String.join(",", batch);
                 byte[] requestBytes = request.getBytes();
                 try {
                     address = InetAddress.getByName(peer);

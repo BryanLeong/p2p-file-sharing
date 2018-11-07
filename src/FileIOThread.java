@@ -1,20 +1,33 @@
 import java.io.File;
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 class FileIOThread extends Thread {
+    private DatagramSocket socket;
     private ConcurrentHashMap<String, byte[]> chunkMap;
+    private ConcurrentHashMap<String, Set<String>> peerMap;
     private File folder;
     private List<File> fileList;
     private int chunkSize;
 
     public FileIOThread(int chunkSize,
-                        ConcurrentHashMap<String, byte[]> chunkMap) {
+                        InetAddress localAddress,
+                        ConcurrentHashMap<String, byte[]> chunkMap,
+                        ConcurrentHashMap<String, Set<String>> peerMap) {
         this.chunkSize = chunkSize;
+        this.peerMap = peerMap;
         this.chunkMap = chunkMap;
+        try {
+            socket = new DatagramSocket(8003, localAddress);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         folder = new File("files");
         fileList = Arrays.asList(folder.listFiles());
         populateChunkMap();
@@ -53,6 +66,9 @@ class FileIOThread extends Thread {
             if (!fileList.containsAll(newFileList)) {
                 fileList = newFileList;
                 populateChunkMap();
+                for (String peer : peerMap.keySet()) {
+                    Common.updatePeerWithChunkList(socket, chunkMap, peer);
+                }
             }
 
             // if we have all chunks of a file, write it to disk
