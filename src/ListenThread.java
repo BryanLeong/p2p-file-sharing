@@ -67,15 +67,8 @@ class ListenThread extends Thread {
                     }
                     break;
                 case "request":
-                    // Get batch of requested chunks
-                    List<byte[]> chunks = new ArrayList<byte[]>();
-                    byte[] chunk;
-                    for (String chunkId : data[1].split(",")) {
-                        chunk = chunkMap.get(chunkId);
-                        chunks.add(chunk);
-                    }
-                    // Start new UploadThread to send chunks to requester
-                    Thread uploadThread = new UploadThread(peer, chunks);
+                    // Get batch of requested chunks and start new UploadThread to send chunks to requester
+                    Thread uploadThread = new UploadThread(chunkMap, peer, data[1].split(","));
                     uploadThread.start();
                     break;
                 case "list":

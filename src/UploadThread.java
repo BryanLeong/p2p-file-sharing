@@ -4,15 +4,17 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 class UploadThread extends Thread {
     private DatagramSocket socket;
     private InetAddress address;
-    List<byte[]> chunks;
+    private ConcurrentHashMap<String, byte[]> chunkMap;
+    private String[] chunkIds;
 
-    public UploadThread(String address, List<byte[]> chunks) {
-        this.chunks = chunks;
+    public UploadThread(ConcurrentHashMap<String, byte[]> chunkMap, String address, String[] chunkIds) {
+        this.chunkMap = chunkMap;
+        this.chunkIds = chunkIds;
         try {
             socket = new DatagramSocket();
             this.address = InetAddress.getByName(address);
@@ -22,8 +24,10 @@ class UploadThread extends Thread {
     }
 
     public void run() {
-        for (byte[] chunk : chunks) {
-            DatagramPacket packet = new DatagramPacket(chunk, chunk.length, address, 8001);
+        for (String chunkId : chunkIds) {
+            byte[] chunk = chunkMap.get(chunkId);
+            byte[] data = String.format("%s,%s", chunkId, new String(chunk)).getBytes();
+            DatagramPacket packet = new DatagramPacket(data, data.length, address, 8001);
             try {
                 socket.send(packet);
             } catch (IOException e) {
