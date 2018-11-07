@@ -5,8 +5,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -40,16 +38,23 @@ class ListenThread extends Thread {
         DatagramPacket packet;
 
         while (true) {
-            byte[] buf = new byte[1024];
+            byte[] buf = new byte[2048];
             packet = new DatagramPacket(buf, buf.length);
             try {
                 socket.receive(packet);
+                if (packet.getAddress().equals(InetAddress.getLocalHost())) {
+                    continue;
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             peer = packet.getAddress().getHostAddress();
             data = (new String(packet.getData())).trim().split(",", 2);
+
+            System.out.println("Received packet from: " + peer);
+            System.out.println("Packet type: " + data[0]);
+            System.out.println("Data: " + data[1]);
 
             switch (data[0]) {
                 case "query":
@@ -79,10 +84,5 @@ class ListenThread extends Thread {
                     break;
             }
         }
-    }
-
-    public static void main(String[] args) {
-        Thread lt = new ListenThread(new ConcurrentHashMap<String, byte[]>(), new ConcurrentHashMap<String, Set<String>>());
-        lt.start();
     }
 }
