@@ -11,6 +11,11 @@ class App {
         int chunkSize = 1024;
 
         (new FileIOThread(chunkSize, chunkMap)).start();
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         (new ListenThread(chunkMap, peerMap)).start();
         (new DownloadThread(chunkSize, chunkMap, batchMap, requestedChunks)).start();
         (new RequestThread(chunkMap, peerMap, batchMap, requestedChunks)).start();
