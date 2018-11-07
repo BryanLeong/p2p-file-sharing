@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Arrays;
 import java.util.Set;
@@ -13,12 +12,12 @@ class ListenThread extends Thread {
     private ConcurrentHashMap<String, byte[]> chunkMap;
     private ConcurrentHashMap<String, Set<String>> peerMap;
 
-    public ListenThread(ConcurrentHashMap<String, byte[]> chunkMap, ConcurrentHashMap<String, Set<String>> peerMap) {
+    public ListenThread(InetAddress localAddress, ConcurrentHashMap<String, byte[]> chunkMap, ConcurrentHashMap<String, Set<String>> peerMap) {
         this.chunkMap = chunkMap;
         this.peerMap = peerMap;
         try {
-            socket = new DatagramSocket(8000);
-        } catch (SocketException e) {
+            socket = new DatagramSocket(8000, localAddress);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

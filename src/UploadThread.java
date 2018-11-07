@@ -2,8 +2,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentHashMap;
 
 class UploadThread extends Thread {
@@ -18,7 +16,7 @@ class UploadThread extends Thread {
         try {
             socket = new DatagramSocket();
             this.address = InetAddress.getByName(address);
-        } catch (SocketException | UnknownHostException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

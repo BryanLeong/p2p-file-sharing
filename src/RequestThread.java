@@ -14,7 +14,8 @@ class RequestThread extends Thread {
     private CopyOnWriteArrayList<String> requestedChunks;
 
 
-    public RequestThread(ConcurrentHashMap<String, byte[]> chunkMap,
+    public RequestThread(InetAddress localAddress,
+                         ConcurrentHashMap<String, byte[]> chunkMap,
                          ConcurrentHashMap<String, Set<String>> peerMap,
                          ConcurrentHashMap<String, Set<String>> batchMap,
                          CopyOnWriteArrayList<String> requestedChunks) {
@@ -23,9 +24,9 @@ class RequestThread extends Thread {
         this.batchMap = batchMap;
         this.requestedChunks = requestedChunks;
         try {
-            socket = new DatagramSocket();
+            socket = new DatagramSocket(8002, localAddress);
             socket.setBroadcast(true);
-        } catch (SocketException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
