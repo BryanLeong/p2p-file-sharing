@@ -109,22 +109,10 @@ class RequestThread extends Thread {
     }
 
     public void run() {
-        String msg;
-        InetAddress address;
-        DatagramPacket packet;
         Set<String> batch;
 
-        // Send 'query' message to broadcast address on startup to discover peers
-        msg = "query," + String.join(",", chunkMap.keySet());
-        byte[] msgBytes = msg.getBytes();
-        try {
-            address = InetAddress.getByName("255.255.255.255");
-            packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8000);
-            socket.send(packet);
-            Thread.sleep(2000);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        // Send 'query' message to broadcast address on startup to discover peers and ask for their list of chunks
+        Common.sendQuery(socket, "255.255.255.255");
 
         while (true) { // This while line should be changed to see if any peers have replied and have break condition?
             // If not currently downloading from any peer,
@@ -140,15 +128,7 @@ class RequestThread extends Thread {
                 batch = new HashSet<String>();
 
                 // send 'request' message to peer to initiate file transfer
-                String request = "request," + String.join(",", batch);
-                byte[] requestBytes = request.getBytes();
-                try {
-                    address = InetAddress.getByName(peer);
-                    packet = new DatagramPacket(requestBytes, requestBytes.length, address, 8000);
-                    socket.send(packet);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                Common.sendRequest(socket, peer, batch);
             }
         }
     }

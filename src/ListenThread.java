@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Arrays;
 import java.util.Set;
@@ -11,28 +12,18 @@ class ListenThread extends Thread {
     private DatagramSocket socket;
     private ConcurrentHashMap<String, byte[]> chunkMap;
     private ConcurrentHashMap<String, Set<String>> peerMap;
+    private ConcurrentHashMap<String, Date> peerUpdateMap;
 
-    public ListenThread(InetAddress localAddress, ConcurrentHashMap<String, byte[]> chunkMap, ConcurrentHashMap<String, Set<String>> peerMap) {
+    public ListenThread(ConcurrentHashMap<String, byte[]> chunkMap,
+                        ConcurrentHashMap<String, Set<String>> peerMap,
+                        ConcurrentHashMap<String, Date> peerUpdateMap) {
         this.chunkMap = chunkMap;
         this.peerMap = peerMap;
+        this.peerUpdateMap = peerUpdateMap;
         try {
-            socket = new DatagramSocket(8000, localAddress);
+            socket = new DatagramSocket(8001);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void storePeerChunkList(String peer, String data) {
-        Set<String> peerChunkSet;
-        if (!data.isEmpty()) {
-            peerChunkSet = new HashSet<>(Arrays.asList(data.split(",")));
-        } else {
-            peerChunkSet = new HashSet<>();
-        }
-        if (peerMap.containsKey(peer)) {
-            peerMap.replace(peer, peerChunkSet);
-        } else {
-            peerMap.put(peer, peerChunkSet);
         }
     }
 
@@ -56,16 +47,23 @@ class ListenThread extends Thread {
             peer = packet.getAddress().getHostAddress();
             data = (new String(packet.getData())).trim().split(",", 2);
 
+            // Record time of last update from peer
+            if (peerUpdateMap.containsKey(peer)) {
+                peerUpdateMap.replace(peer, new Date());
+            } else {
+                peerUpdateMap.put(peer, new Date());
+            }
+
             System.out.println("Received packet from: " + peer);
             System.out.println("Packet type: " + data[0]);
             System.out.println("Data: " + data[1]);
 
             switch (data[0]) {
                 case "query":
-                    // Store peer's list of chunks
-                    storePeerChunkList(peer, data[1]);
+                    // New peer detected: ask for peer's chunk list
+                    Common.sendQuery(socket, peer);
                     // Reply with list of available chunks
-                    Common.updatePeerWithChunkList(socket, chunkMap, peer);
+                    Common.sendChunkList(socket, peer, chunkMap.keySet());
                     break;
                 case "request":
                     // Get batch of requested chunks and start new UploadThread to send chunks to requester
@@ -75,8 +73,16 @@ class ListenThread extends Thread {
                     }
                     break;
                 case "list":
-                    // Store peer's list of chunks
-                    storePeerChunkList(peer, data[1]);
+                    // Add to peer's list of chunks
+                    if (!data[1].isEmpty()) {
+                        if (peerMap.containsKey(peer)) {
+                            peerMap.get(peer).addAll(Arrays.asList(data[1].split(",")));
+                        } else {
+                            peerMap.put(peer, new HashSet<>(Arrays.asList(data[1].split(","))));
+                        }
+                    } else {
+                        peerMap.put(peer, new HashSet<>());
+                    }
                     break;
                 default:
                     break;

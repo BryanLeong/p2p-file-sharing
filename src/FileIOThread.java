@@ -1,39 +1,36 @@
 import java.io.File;
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 class FileIOThread extends Thread {
-    private DatagramSocket socket;
     private ConcurrentHashMap<String, byte[]> chunkMap;
-    private ConcurrentHashMap<String, Set<String>> peerMap;
+    private CopyOnWriteArrayList<String> newChunks;
     private File folder;
     private List<File> fileList;
     private int chunkSize;
+    private Thread updateThread;
 
     public FileIOThread(int chunkSize,
-                        InetAddress localAddress,
+                        Thread updateThread,
                         ConcurrentHashMap<String, byte[]> chunkMap,
-                        ConcurrentHashMap<String, Set<String>> peerMap) {
+                        CopyOnWriteArrayList<String> newChunks) {
         this.chunkSize = chunkSize;
-        this.peerMap = peerMap;
+        this.updateThread = updateThread;
         this.chunkMap = chunkMap;
-        try {
-            socket = new DatagramSocket(8003, localAddress);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.newChunks = newChunks;
         folder = new File("files");
         fileList = Arrays.asList(folder.listFiles());
         populateChunkMap();
     }
 
-    private void populateChunkMap() {
+    private Set<String> populateChunkMap() {
+        Set<String> newChunks = new HashSet<>();
         for (File file : fileList) {
             String fileName = file.getName();
             try {
@@ -50,6 +47,7 @@ class FileIOThread extends Thread {
                     byte[] chunk = Arrays.copyOfRange(fileBytes, start, end);
                     if (!chunkMap.containsKey(chunkId)) {
                         chunkMap.put(chunkId, chunk);
+                        newChunks.add(chunkId);
                     }
                     start += chunkSize;
                 }
@@ -57,6 +55,7 @@ class FileIOThread extends Thread {
                 e.printStackTrace();
             }
         }
+        return newChunks;
     }
 
     public void run() {
@@ -65,9 +64,9 @@ class FileIOThread extends Thread {
             List<File> newFileList = Arrays.asList(folder.listFiles());
             if (!fileList.containsAll(newFileList)) {
                 fileList = newFileList;
-                populateChunkMap();
-                for (String peer : peerMap.keySet()) {
-                    Common.updatePeerWithChunkList(socket, chunkMap, peer);
+                newChunks.addAll(populateChunkMap());
+                if (!updateThread.isInterrupted()) {
+                    updateThread.interrupt();
                 }
             }
 

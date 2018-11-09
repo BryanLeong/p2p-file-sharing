@@ -9,23 +9,26 @@ import java.util.concurrent.CopyOnWriteArrayList;
 class DownloadThread extends Thread {
     private DatagramSocket socket;
     private ConcurrentHashMap<String, byte[]> chunkMap;
-    private ConcurrentHashMap<String, Set<String>> peerMap;
     private ConcurrentHashMap<String, Set<String>> batchMap;
     private CopyOnWriteArrayList<String> requestedChunks;
+    private CopyOnWriteArrayList<String> receivedChunks;
     private int chunkSize;
+    private Thread updateThread;
 
     public DownloadThread(int chunkSize,
+                          Thread updateThread,
                           ConcurrentHashMap<String, byte[]> chunkMap,
-                          ConcurrentHashMap<String, Set<String>> peerMap,
                           ConcurrentHashMap<String, Set<String>> batchMap,
-                          CopyOnWriteArrayList<String> requestedChunks) {
+                          CopyOnWriteArrayList<String> requestedChunks,
+                          CopyOnWriteArrayList<String> receivedChunks) {
         this.chunkSize = chunkSize;
-        this.peerMap = peerMap;
+        this.updateThread = updateThread;
         this.chunkMap = chunkMap;
         this.batchMap = batchMap;
         this.requestedChunks = requestedChunks;
+        this.receivedChunks = receivedChunks;
         try {
-            socket = new DatagramSocket(8001);
+            socket = new DatagramSocket(8000);
         } catch (SocketException e) {
             e.printStackTrace();
         }
@@ -35,6 +38,7 @@ class DownloadThread extends Thread {
         String peer;
         String[] data;
         DatagramPacket packet;
+        updateThread.start();
 
         while (true) {
             byte[] buf = new byte[chunkSize];
@@ -52,12 +56,14 @@ class DownloadThread extends Thread {
             batchMap.get(peer).remove(data[0]);
             if (batchMap.get(peer).isEmpty()) {
                 batchMap.remove(peer);
-                // send all peers updated list of chunks
-                for (String peer1 : peerMap.keySet()) {
-                    Common.updatePeerWithChunkList(socket, chunkMap, peer1);
-                }
             }
             requestedChunks.remove(data[0]);
+            receivedChunks.add(data[0]);
+
+            if (receivedChunks.size() >= 10) {
+                if (!updateThread.isInterrupted())
+                updateThread.interrupt();
+            }
         }
     }
 }
