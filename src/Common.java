@@ -26,6 +26,10 @@ class Common {
         sendMessage(socket, peer, "query", null);
     }
 
+    static void replyQuery(DatagramSocket socket, String peer) {
+        sendMessage(socket, peer, "hello", null);
+    }
+
     static void sendChunkList(DatagramSocket socket, String peer, Set<String> chunkSet) {
         List<String> chunkList = new ArrayList<>(chunkSet);
         sendChunkList(socket, peer, chunkList);

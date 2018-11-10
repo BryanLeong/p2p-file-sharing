@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,6 +17,7 @@ class DownloadThread extends Thread {
     private Thread updateThread;
 
     public DownloadThread(int chunkSize,
+                          InetAddress localAddress,
                           Thread updateThread,
                           ConcurrentHashMap<String, byte[]> chunkMap,
                           ConcurrentHashMap<String, Set<String>> batchMap,
@@ -28,7 +30,7 @@ class DownloadThread extends Thread {
         this.requestedChunks = requestedChunks;
         this.receivedChunks = receivedChunks;
         try {
-            socket = new DatagramSocket(8000);
+            socket = new DatagramSocket(8000, localAddress);
         } catch (SocketException e) {
             e.printStackTrace();
         }

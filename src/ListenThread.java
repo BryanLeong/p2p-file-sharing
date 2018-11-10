@@ -14,14 +14,15 @@ class ListenThread extends Thread {
     private ConcurrentHashMap<String, Set<String>> peerMap;
     private ConcurrentHashMap<String, Date> peerUpdateMap;
 
-    public ListenThread(ConcurrentHashMap<String, byte[]> chunkMap,
+    public ListenThread(InetAddress localAddress,
+                        ConcurrentHashMap<String, byte[]> chunkMap,
                         ConcurrentHashMap<String, Set<String>> peerMap,
                         ConcurrentHashMap<String, Date> peerUpdateMap) {
         this.chunkMap = chunkMap;
         this.peerMap = peerMap;
         this.peerUpdateMap = peerUpdateMap;
         try {
-            socket = new DatagramSocket(8001);
+            socket = new DatagramSocket(8001, localAddress);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -37,7 +38,7 @@ class ListenThread extends Thread {
             packet = new DatagramPacket(buf, buf.length);
             try {
                 socket.receive(packet);
-                if (packet.getAddress().equals(InetAddress.getLocalHost())) {
+                if (packet.getAddress().isAnyLocalAddress()) {
                     continue;
                 }
             } catch (IOException e) {
@@ -56,13 +57,17 @@ class ListenThread extends Thread {
 
             System.out.println("Received packet from: " + peer);
             System.out.println("Packet type: " + data[0]);
-            System.out.println("Data: " + data[1]);
+            System.out.println("Data: " + data[1] + "\n");
 
             switch (data[0]) {
                 case "query":
                     // New peer detected: ask for peer's chunk list
-                    Common.sendQuery(socket, peer);
+                    Common.replyQuery(socket, peer);
                     // Reply with list of available chunks
+                    Common.sendChunkList(socket, peer, chunkMap.keySet());
+                    break;
+                case "hello":
+                    // Peer responded to our query, send list of available chunks
                     Common.sendChunkList(socket, peer, chunkMap.keySet());
                     break;
                 case "request":

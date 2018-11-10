@@ -25,9 +25,9 @@ class App {
         (new FileIOThread(chunkSize, cdl, updateThread, chunkMap, newChunks)).start();
         // wait for FileIOThread to populate chunkMap
         cdl.await();
-        (new ListenThread(chunkMap, peerMap, peerUpdateMap)).start();
+        (new ListenThread(localAddress, chunkMap, peerMap, peerUpdateMap)).start();
         (new PeerTrackerThread(peerUpdateMap, peerMap, batchMap, requestedChunks)).start();
-        (new DownloadThread(chunkSize, updateThread, chunkMap, batchMap, requestedChunks, newChunks)).start();
+        (new DownloadThread(chunkSize, localAddress, updateThread, chunkMap, batchMap, requestedChunks, newChunks)).start();
         (new RequestThread(localAddress, chunkMap, peerMap, batchMap, requestedChunks)).start();
     }
 }
