@@ -15,7 +15,7 @@ class Common {
         byte[] msgBytes = msg.getBytes();
         try {
             InetAddress address = InetAddress.getByName(peer);
-            DatagramPacket packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8000);
+            DatagramPacket packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8001);
             socket.send(packet);
         } catch (IOException e) {
             e.printStackTrace();

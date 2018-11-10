@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 
 class FileIOThread extends Thread {
     private ConcurrentHashMap<String, byte[]> chunkMap;
@@ -17,6 +18,7 @@ class FileIOThread extends Thread {
     private Thread updateThread;
 
     public FileIOThread(int chunkSize,
+                        CountDownLatch cdl,
                         Thread updateThread,
                         ConcurrentHashMap<String, byte[]> chunkMap,
                         CopyOnWriteArrayList<String> newChunks) {
@@ -27,6 +29,7 @@ class FileIOThread extends Thread {
         folder = new File("files");
         fileList = Arrays.asList(folder.listFiles());
         populateChunkMap();
+        cdl.countDown();
     }
 
     private Set<String> populateChunkMap() {

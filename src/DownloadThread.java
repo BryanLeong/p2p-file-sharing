@@ -38,7 +38,6 @@ class DownloadThread extends Thread {
         String peer;
         String[] data;
         DatagramPacket packet;
-        updateThread.start();
 
         while (true) {
             byte[] buf = new byte[chunkSize];
