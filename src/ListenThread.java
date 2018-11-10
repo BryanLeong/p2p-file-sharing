@@ -10,6 +10,7 @@ import java.util.HashSet;
 
 class ListenThread extends Thread {
     private DatagramSocket socket;
+    private InetAddress localAddress;
     private ConcurrentHashMap<String, byte[]> chunkMap;
     private ConcurrentHashMap<String, Set<String>> peerMap;
     private ConcurrentHashMap<String, Date> peerUpdateMap;
@@ -21,6 +22,7 @@ class ListenThread extends Thread {
         this.chunkMap = chunkMap;
         this.peerMap = peerMap;
         this.peerUpdateMap = peerUpdateMap;
+        this.localAddress = localAddress;
         try {
             socket = new DatagramSocket(8001, localAddress);
         } catch (IOException e) {
@@ -38,7 +40,7 @@ class ListenThread extends Thread {
             packet = new DatagramPacket(buf, buf.length);
             try {
                 socket.receive(packet);
-                if (packet.getAddress().isAnyLocalAddress()) {
+                if (packet.getAddress().equals(localAddress)) {
                     continue;
                 }
             } catch (IOException e) {
