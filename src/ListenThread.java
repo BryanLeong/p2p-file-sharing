@@ -77,7 +77,7 @@ class ListenThread extends Thread {
                 case "request":
                     // Get batch of requested chunks and start new UploadThread to send chunks to requester
                     if (!data[1].isEmpty()) {
-                        Thread uploadThread = new UploadThread(localAddress, chunkMap, peer, data[1].split(","));
+                        Thread uploadThread = new UploadThread(chunkMap, peer, data[1].split(","));
                         uploadThread.start();
                     }
                     break;
