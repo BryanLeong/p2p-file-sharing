@@ -12,7 +12,7 @@ class DownloadThread extends Thread {
     private ConcurrentHashMap<String, byte[]> chunkMap;
     private ConcurrentHashMap<String, Set<String>> batchMap;
     private CopyOnWriteArrayList<String> requestedChunks;
-    private CopyOnWriteArrayList<String> receivedChunks;
+    private CopyOnWriteArrayList<String> newChunks;
     private int chunkSize;
     private Thread updateThread;
 
@@ -22,13 +22,13 @@ class DownloadThread extends Thread {
                           ConcurrentHashMap<String, byte[]> chunkMap,
                           ConcurrentHashMap<String, Set<String>> batchMap,
                           CopyOnWriteArrayList<String> requestedChunks,
-                          CopyOnWriteArrayList<String> receivedChunks) {
+                          CopyOnWriteArrayList<String> newChunks) {
         this.chunkSize = chunkSize;
         this.updateThread = updateThread;
         this.chunkMap = chunkMap;
         this.batchMap = batchMap;
         this.requestedChunks = requestedChunks;
-        this.receivedChunks = receivedChunks;
+        this.newChunks = newChunks;
         try {
             socket = new DatagramSocket(8000, localAddress);
         } catch (SocketException e) {
@@ -59,9 +59,11 @@ class DownloadThread extends Thread {
                 batchMap.remove(peer);
             }
             requestedChunks.remove(data[0]);
-            receivedChunks.add(data[0]);
+            synchronized (newChunks) {
+                newChunks.add(data[0]);
+            }
 
-            if (receivedChunks.size() >= 10) {
+            if (newChunks.size() >= 10) {
                 if (!updateThread.isInterrupted())
                 updateThread.interrupt();
             }

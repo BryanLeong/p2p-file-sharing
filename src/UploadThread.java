@@ -10,11 +10,12 @@ class UploadThread extends Thread {
     private ConcurrentHashMap<String, byte[]> chunkMap;
     private String[] chunkIds;
 
-    public UploadThread(ConcurrentHashMap<String, byte[]> chunkMap, String address, String[] chunkIds) {
+    public UploadThread(InetAddress localAddress, ConcurrentHashMap<String, byte[]> chunkMap,
+                        String address, String[] chunkIds) {
         this.chunkMap = chunkMap;
         this.chunkIds = chunkIds;
         try {
-            socket = new DatagramSocket();
+            socket = new DatagramSocket(8004, localAddress);
             this.address = InetAddress.getByName(address);
         } catch (IOException e) {
             e.printStackTrace();

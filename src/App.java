@@ -20,7 +20,7 @@ class App {
         CountDownLatch cdl = new CountDownLatch(1);
         int chunkSize = 1024;
 
-        Thread updateThread = new UpdateThread(peerMap, newChunks);
+        Thread updateThread = new UpdateThread(localAddress, peerMap, newChunks);
         updateThread.start();
         (new FileIOThread(chunkSize, cdl, updateThread, chunkMap, newChunks)).start();
         // wait for FileIOThread to populate chunkMap

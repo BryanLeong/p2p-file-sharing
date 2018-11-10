@@ -67,7 +67,10 @@ class FileIOThread extends Thread {
             List<File> newFileList = Arrays.asList(folder.listFiles());
             if (!fileList.containsAll(newFileList)) {
                 fileList = newFileList;
-                newChunks.addAll(populateChunkMap());
+                Set<String> result = populateChunkMap();
+                synchronized (newChunks) {
+                    newChunks.addAll(result);
+                }
                 if (!updateThread.isInterrupted()) {
                     updateThread.interrupt();
                 }

@@ -64,31 +64,27 @@ class ListenThread extends Thread {
             switch (data[0]) {
                 case "query":
                     // New peer detected: ask for peer's chunk list
+                    peerMap.put(peer, new HashSet<>());
                     Common.replyQuery(socket, peer);
                     // Reply with list of available chunks
                     Common.sendChunkList(socket, peer, chunkMap.keySet());
                     break;
                 case "hello":
                     // Peer responded to our query, send list of available chunks
+                    peerMap.put(peer, new HashSet<>());
                     Common.sendChunkList(socket, peer, chunkMap.keySet());
                     break;
                 case "request":
                     // Get batch of requested chunks and start new UploadThread to send chunks to requester
                     if (!data[1].isEmpty()) {
-                        Thread uploadThread = new UploadThread(chunkMap, peer, data[1].split(","));
+                        Thread uploadThread = new UploadThread(localAddress, chunkMap, peer, data[1].split(","));
                         uploadThread.start();
                     }
                     break;
                 case "list":
                     // Add to peer's list of chunks
                     if (!data[1].isEmpty()) {
-                        if (peerMap.containsKey(peer)) {
-                            peerMap.get(peer).addAll(Arrays.asList(data[1].split(",")));
-                        } else {
-                            peerMap.put(peer, new HashSet<>(Arrays.asList(data[1].split(","))));
-                        }
-                    } else {
-                        peerMap.put(peer, new HashSet<>());
+                        peerMap.get(peer).addAll(Arrays.asList(data[1].split(",")));
                     }
                     break;
                 default:
