@@ -2,9 +2,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 class Common {
     private static void sendMessage(DatagramSocket socket, String peer, String type, List<String> data) {
@@ -53,4 +51,32 @@ class Common {
     static void sendRequest(DatagramSocket socket, String peer, Set<String> chunkSet) {
         sendMessage(socket, peer, "request", new ArrayList<>(chunkSet));
     }
+
+    // Assuming data is in the form "filename/no_of_chunks/chunks"
+    //  e.g. "file.txt/12/1,2,3,4,10,11,12"
+    static Set<String> unpackChunks (String data, String fileName) {
+        List<String> chunkList = new ArrayList<>();
+        String[] parts = data.split("/");
+        if (parts[0].equals(fileName)) {
+            String[] chunkArray = parts[2].split(",");
+            chunkList = Arrays.asList(chunkArray);
+            return new HashSet<>(chunkList);
+        }
+        return new HashSet<>();
+    }
+
+    // Should be used more often than the one on top
+    // Assuming data is in the form "filename/no_of_chunks/chunks"
+    //  e.g. "file.txt/12/1,2,3,4,10,11,12"
+    static Set<String> unpackChunks (Set<String> data, String fileName) {
+        for (String file : data){
+            String[] parts = file.split("/");
+            if (parts.length != 3 || !parts[0].equals(fileName))
+                continue;
+            String[] chunkArray = parts[2].split(",");
+            return new HashSet<>(Arrays.asList(chunkArray));
+        }
+        return new HashSet<>();
+    }
+
 }

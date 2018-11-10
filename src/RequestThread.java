@@ -31,8 +31,9 @@ class RequestThread extends Thread {
 
     // The list this method returns starts with the rarest chunk and ends with the most common.
     // Instead of taking peerMap, we can take calculate for each peer his availability of each chunk.
-    // then we sum up all the availabilities of all peers.
-    List<Integer> chunkRarity(String fileName){
+    //  then we sum up all the availabilities of all peers.
+    // We also need to handle chunks without seeders.
+    List<Integer> chunkRarity(String fileName) {
 
         int[] occurrences = null;
         // occurrences is an array of size=no_of_chunks, where the index corresponds to the chunk number and
@@ -42,23 +43,23 @@ class RequestThread extends Thread {
             Set<String> peerFiles = entry.getValue();
             for (String file : peerFiles) {
                 String[] parts = file.split("/"); //parts should have length of 3.
-                if(!fileName.equals(parts[0]))
+                if (!fileName.equals(parts[0]))
                     continue;
-                if (occurrences == null){
+                if (occurrences == null) {
                     // Assigns the number of chunks to be the size of the array
                     // Can throw index out of range or wrong type errors
                     occurrences = new int[Integer.valueOf(parts[1])];
                 }
 
                 String[] chunks = parts[2].split(",");
-                for (String chunk : chunks){
+                for (String chunk : chunks) {
                     int chunkNo = Integer.valueOf(chunk);
                     occurrences[chunkNo]++;
                 }
             }
         }
         // Shouldn't happen
-        if(occurrences == null) return null;
+        if (occurrences == null) return null;
 
         // To return, we are converting the list from size=no_of_chunks and value = availability to
         //  List[List] where the index of the outer list refers to the availability and
@@ -71,26 +72,23 @@ class RequestThread extends Thread {
 //            System.out.println(output.size());
         }
 
-        // We add all chunks sorted by their occurrences
+        // We add all chunks into lists sorted by their occurrences
         int i = 0;
-        while (occurrences.length > i){
-//            System.out.println(occurrences[i]);
+        while (occurrences.length > i) {
             try {
                 availabilityList.get(occurrences[i]).add(i);
-//                System.out.println(output.get(occurrences[i]));
-            } catch (IndexOutOfBoundsException e){
-                availabilityList.get(availabilityList.size()-1).add(i);
+            } catch (IndexOutOfBoundsException e) {
+                availabilityList.get(availabilityList.size() - 1).add(i);
             }
             i++;
         }
 
         // We concatenate all the lists together to form a list of all the chunks sorted by their rarity.
         List<Integer> sortedList = new ArrayList<>();
-        for (ArrayList<Integer> smallList : availabilityList){
+        for (ArrayList<Integer> smallList : availabilityList) {
             sortedList.addAll(smallList);
         }
 
-//        System.out.println(new ArrayList<>(Arrays.asList(occurrences)));
         return sortedList;
     }
 
@@ -103,13 +101,20 @@ class RequestThread extends Thread {
         testSet2.add("a/8/0,2,3,7");
         peerMap.put("123", testSet);
         peerMap.put("321", testSet2);
-        RequestThread test = new RequestThread(null,null, peerMap, null, null);
+        RequestThread test = new RequestThread(null, null, peerMap, null, null);
         List<Integer> result = test.chunkRarity("a");
         System.out.println(result);
     }
 
     public void run() {
         Set<String> batch;
+        Integer batchSize = 5;
+        String fileName = "";
+
+        // Send 'query' message to broadcast address on startup to discover peers and ask for their list of chunks
+        Common.sendQuery(socket, "255.255.255.255");
+
+        List<Integer> chunkList = chunkRarity(fileName);
 
         // Send 'query' message to broadcast address on startup to discover peers and ask for their list of chunks
         Common.sendQuery(socket, "255.255.255.255");
@@ -121,11 +126,64 @@ class RequestThread extends Thread {
                 if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(entry.getValue())) {
                     continue;
                 }
-                
-                // check which chunks peer has but we do not and are not currently downloading
 
-                // create batch of chunks based on scarcest-first algo
+                // Remove chunks in chunkList that are already in chunkMap (the chunks we already have)
+                Enumeration<String> chunkIter = chunkMap.keys();
+                while (chunkIter.hasMoreElements()) {
+                    String current = chunkIter.nextElement();
+                    Set<String> completedChunks = Common.unpackChunks(current, fileName);
+//                    if (completedChunks.size() == 0) continue;
+                    for (String chunk : completedChunks) {
+                        chunkList.remove(Integer.valueOf(chunk));
+                        // .remove still works if value is not in the list.
+                        // .remove is overloaded with (int index) and (Object o), but in this case we are removing
+                        //  an object and Java is smart enough to know that
+                    }
+                }
+
+                chunkIter = batchMap.keys();
+                while (chunkIter.hasMoreElements()){
+                    String current = chunkIter.nextElement();
+                    Set<String> batchChunk = Common.unpackChunks(current, fileName);
+                    for (String chunk : batchChunk){
+//                        chunkList.remove(Integer.valueOf(chunk));
+                        // Instead of removing, we can append it to the end instead.
+                        //  This gives the chunk that is in a batch the lowest priority.
+                        // I'm assuming we handle receiving repeat chunks already.
+                        int chunkIndex = chunkList.indexOf(Integer.valueOf(chunk));
+                        if (chunkIndex == -1) {
+                            continue;
+                        }
+                        int batchedChunk = chunkList.remove(chunkIndex);
+                        chunkList.add(batchedChunk);
+                    }
+                }
+
+                // We look for the available chunks the peer has,
+                Set<String> peerFiles = entry.getValue();
+//                Set<String> peerChunks = new HashSet<>();
+//                for (String file : peerFiles) {
+//                    String[] parts = file.split("/");
+//                    if (!parts[0].equals(fileName)) {
+//                        continue;
+//                    }
+//                    String[] chunks = parts[2].split(",");
+//                    peerChunks.addAll(Arrays.asList(chunks));
+//                }
+                Set<String> peerChunks = Common.unpackChunks(peerFiles, fileName);
+
                 batch = new HashSet<String>();
+                // then loop through the sorted chunkList and add their available chunk to the batch
+                // TODO: At this stage, we should remove the chunks we requested (batchMap) from chunkList
+                for (Integer chunk : chunkList) {
+                    if (peerChunks.contains(chunk.toString())) {
+                        batch.add(chunk.toString());
+                    }
+                    if (batch.size() > batchSize)
+                        break;
+                }
+
+                // We then send the batch containing the chunks we want.
 
                 // send 'request' message to peer to initiate file transfer
                 Common.sendRequest(socket, peer, batch);
