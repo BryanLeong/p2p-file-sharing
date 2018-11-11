@@ -128,30 +128,26 @@ class RequestThread extends Thread {
                 }
 
                 // Remove chunks in chunkList that are already in chunkMap (the chunks we already have)
+                // We assume that chunks in the chunkMap are in a good format, e.g. "filename/no_of_chunks/chunk_no"
                 Enumeration<String> chunkIter = chunkMap.keys();
                 while (chunkIter.hasMoreElements()) {
                     String current = chunkIter.nextElement();
-                    Set<String> completedChunks = Common.unpackChunks(current, fileName);
-//                    if (completedChunks.size() == 0) continue;
-                    for (String chunk : completedChunks) {
-                        chunkList.remove(Integer.valueOf(chunk));
+                    String completedChunk = Common.unpackChunk(current, fileName);
+                    if (completedChunk != null){
+                        chunkList.remove(Integer.valueOf(completedChunk));
+                    }
                         // .remove still works if value is not in the list.
                         // .remove is overloaded with (int index) and (Object o), but in this case we are removing
                         //  an object and Java is smart enough to know that
-                    }
                 }
 
                 chunkIter = batchMap.keys();
                 while (chunkIter.hasMoreElements()){
                     String current = chunkIter.nextElement();
-                    Set<String> batchChunk = Common.unpackChunks(current, fileName);
-                    for (String chunk : batchChunk){
-//                        chunkList.remove(Integer.valueOf(chunk));
-                        // Instead of removing, we can append it to the end instead.
-                        //  This gives the chunk that is in a batch the lowest priority.
-                        // I'm assuming we handle receiving repeat chunks already.
-                        int chunkIndex = chunkList.indexOf(Integer.valueOf(chunk));
-                        if (chunkIndex == -1) {
+                    String batchChunk = Common.unpackChunk(current, fileName);
+                    if (batchChunk != null){
+                        int chunkIndex = chunkList.indexOf(Integer.valueOf(batchChunk));
+                        if (chunkIndex == -1){
                             continue;
                         }
                         int batchedChunk = chunkList.remove(chunkIndex);
@@ -174,7 +170,6 @@ class RequestThread extends Thread {
 
                 batch = new HashSet<String>();
                 // then loop through the sorted chunkList and add their available chunk to the batch
-                // TODO: At this stage, we should remove the chunks we requested (batchMap) from chunkList
                 for (Integer chunk : chunkList) {
                     if (peerChunks.contains(chunk.toString())) {
                         batch.add(chunk.toString());

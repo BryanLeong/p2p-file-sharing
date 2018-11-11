@@ -52,31 +52,33 @@ class Common {
         sendMessage(socket, peer, "request", new ArrayList<>(chunkSet));
     }
 
+    // Returns null if filename is wrong
     // Assuming data is in the form "filename/no_of_chunks/chunks"
-    //  e.g. "file.txt/12/1,2,3,4,10,11,12"
-    static Set<String> unpackChunks (String data, String fileName) {
+    //  e.g. "file.txt/12/1"
+    //      "file.txt/12/2"
+    //      "file.txt/12/10"
+    static String unpackChunk (String data, String fileName) {
         List<String> chunkList = new ArrayList<>();
         String[] parts = data.split("/");
-        if (parts[0].equals(fileName)) {
-            String[] chunkArray = parts[2].split(",");
-            chunkList = Arrays.asList(chunkArray);
-            return new HashSet<>(chunkList);
-        }
-        return new HashSet<>();
+        if (parts.length != 3 || !parts[0].equals(fileName))
+            return null;
+        return parts[2];
     }
 
     // Should be used more often than the one on top
     // Assuming data is in the form "filename/no_of_chunks/chunks"
-    //  e.g. "file.txt/12/1,2,3,4,10,11,12"
+    //  e.g. "file.txt/12/1"
+    //      "file.txt/12/2"
+    //      "file.txt/12/10"
     static Set<String> unpackChunks (Set<String> data, String fileName) {
+        Set<String> chunkSet = new HashSet<>();
         for (String file : data){
             String[] parts = file.split("/");
             if (parts.length != 3 || !parts[0].equals(fileName))
                 continue;
-            String[] chunkArray = parts[2].split(",");
-            return new HashSet<>(Arrays.asList(chunkArray));
+            chunkSet.add(parts[2]);
         }
-        return new HashSet<>();
+        return chunkSet;
     }
 
 }
