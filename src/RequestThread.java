@@ -34,7 +34,6 @@ class RequestThread extends Thread {
     //  then we sum up all the availabilities of all peers.
     // We also need to handle chunks without seeders.
     List<Integer> chunkRarity(String fileName) {
-
         int[] occurrences = null;
         // occurrences is an array of size=no_of_chunks, where the index corresponds to the chunk number and
         //  the value corresponds to the availability (number of hosts who own it) of that chunk.
@@ -108,8 +107,9 @@ class RequestThread extends Thread {
 
     public void run() {
         Set<String> batch;
-        Integer batchSize = 5;
+        int batchSize = 5;
         String fileName = "";
+        int no_of_chunks = 0;
 
         // Send 'query' message to broadcast address on startup to discover peers and ask for their list of chunks
         Common.sendQuery(socket, "255.255.255.255");
@@ -135,10 +135,14 @@ class RequestThread extends Thread {
                     String completedChunk = Common.unpackChunk(current, fileName);
                     if (completedChunk != null){
                         chunkList.remove(Integer.valueOf(completedChunk));
-                    }
                         // .remove still works if value is not in the list.
                         // .remove is overloaded with (int index) and (Object o), but in this case we are removing
                         //  an object and Java is smart enough to know that
+                        if (no_of_chunks == 0){
+                            no_of_chunks = Integer.valueOf(current.split("/")[2]);
+                        }
+                    }
+
                 }
 
                 chunkIter = batchMap.keys();
@@ -172,7 +176,8 @@ class RequestThread extends Thread {
                 // then loop through the sorted chunkList and add their available chunk to the batch
                 for (Integer chunk : chunkList) {
                     if (peerChunks.contains(chunk.toString())) {
-                        batch.add(chunk.toString());
+                        String chunkID = fileName + "/" + String.valueOf(no_of_chunks) + "/" + chunk.toString();
+                        batch.add(chunkID);
                     }
                     if (batch.size() > batchSize)
                         break;
