@@ -119,8 +119,11 @@ class RequestThread extends Thread {
         while (true) { // This while line should be changed to see if any peers have replied and have break condition?
             // If not currently downloading from any peer,
             for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {
-                String peer = new String(entry.getKey());
-                Set<String> peerChunks = new HashSet<>(entry.getValue());
+                String peer = entry.getKey();
+                Set<String> peerChunks;
+                synchronized (entry.getValue()) {
+                    peerChunks = new HashSet<>(entry.getValue());
+                }
                 if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(peerChunks)) {
                     continue;
                 }
