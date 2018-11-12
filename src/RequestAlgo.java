@@ -66,8 +66,10 @@ class RequestAlgo {
                     rarityMap.get(localChunk).remove(peer);
                 }
             }
-            System.out.println("Lost chunks: ");
-            System.out.println(lostChunks);
+            if (lostChunks.size() > 0) {
+                System.out.println("Lost chunks: ");
+                System.out.println(lostChunks);
+            }
 
             peerChunks.get(peer).removeAll(lostChunks);
 
