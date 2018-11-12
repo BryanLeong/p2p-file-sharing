@@ -81,4 +81,10 @@ class Common {
         return chunkSet;
     }
 
+    static Set<String> removeRepeats(Set<String> originalChunks, Set<String> inputs) {
+        Set<String> origChunks = new HashSet<>(originalChunks);
+        origChunks.removeAll(inputs);
+        return origChunks;
+    }
+
 }

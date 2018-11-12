@@ -49,16 +49,30 @@ class RequestThread extends Thread {
                 Set<String> peerChunks;
                 synchronized (entry.getValue()) {
                     peerChunks = new HashSet<>(entry.getValue());
-                    calculator.updatePeer(peer, peerChunks);
                 }
+                calculator.updatePeer(peer, peerChunks);
+
                 if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(peerChunks)) {
                     continue;
+                }
+
+                // We remove chunks that are already completed
+                Enumeration<String> chunkIter = chunkMap.keys();
+                while(chunkIter.hasMoreElements()){
+                    peerChunks.remove(chunkIter.nextElement());
+                }
+
+                // And we remove chunks that are already requested for
+                chunkIter = batchMap.keys();
+                while(chunkIter.hasMoreElements()){
+                    Set<String> batchSet = batchMap.get(chunkIter.nextElement());
+                    Common.removeRepeats(peerChunks, batchSet);
                 }
 
                 batch = new HashSet<String>();
                 // then loop through the sorted chunkList and add their available chunk to the batch
 
-                Set<String> calculatedBatch = calculator.rarestChunks(peer, batchSize);
+                Set<String> calculatedBatch = calculator.rarestChunks(peerChunks, batchSize);
                 batch.addAll(calculatedBatch);
 
 //                for (int i = 1; i <= batchSize; i++) {
@@ -67,6 +81,38 @@ class RequestThread extends Thread {
 //                            batch.add(chunkId);
 //                            requestedChunks.add(chunkId);
 //                        }
+//                    }
+//                }
+
+//                // Remove chunks in chunkList that are already in chunkMap (the chunks we already have)
+//                // We assume that chunks in the chunkMap are in a good format, e.g. "filename/no_of_chunks/chunk_no"
+//                Enumeration<String> chunkIter = chunkMap.keys();
+//                while (chunkIter.hasMoreElements()) {
+//                    String current = chunkIter.nextElement();
+//                    String completedChunk = Common.unpackChunk(current, fileName);
+//                    if (completedChunk != null){
+//                        chunkList.remove(Integer.valueOf(completedChunk));
+//                        // .remove still works if value is not in the list.
+//                        // .remove is overloaded with (int index) and (Object o), but in this case we are removing
+//                        //  an object and Java is smart enough to know that
+//                        if (no_of_chunks == 0){
+//                            no_of_chunks = Integer.valueOf(current.split("/")[2]);
+//                        }
+//                    }
+//
+//                }
+//
+//                chunkIter = batchMap.keys();
+//                while (chunkIter.hasMoreElements()){
+//                    String current = chunkIter.nextElement();
+//                    String batchChunk = Common.unpackChunk(current, fileName);
+//                    if (batchChunk != null){
+//                        int chunkIndex = chunkList.indexOf(Integer.valueOf(batchChunk));
+//                        if (chunkIndex == -1){
+//                            continue;
+//                        }
+//                        int batchedChunk = chunkList.remove(chunkIndex);
+//                        chunkList.add(batchedChunk);
 //                    }
 //                }
 

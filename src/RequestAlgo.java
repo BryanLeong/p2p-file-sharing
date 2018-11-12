@@ -91,15 +91,15 @@ class RequestAlgo {
     }
 
     public Set<String> rarestChunks(String peer) {
-        return rarestChunks(peer, 5);
+        return rarestChunks(peerChunks.get(peer), 5);
     }
 
-    public Set<String> rarestChunks(String peer, int batchSize) {
+    public Set<String> rarestChunks(Set<String> peerChunks, int batchSize) {
         int cutoff = Integer.MAX_VALUE;
         // cutoff is the gatekeeper for rarest chunks, it takes the rarity of the chunk most recently eliminated.
 
         Set<String> rareChunks = new HashSet<>();
-        for (String chunk : peerChunks.get(peer)) {
+        for (String chunk : peerChunks) {
             if (rareChunks.size() < batchSize) {
                 // rareChunks not filled yet
                 rareChunks.add(chunk);
@@ -123,6 +123,12 @@ class RequestAlgo {
             }
         }
         return rareChunks;
+    }
+
+    private Set<String> removeRepeats(Set<String> originalChunks, Set<String> inputs) {
+        Set<String> origChunks = new HashSet<>(originalChunks);
+        origChunks.removeAll(inputs);
+        return origChunks;
     }
 
     private int rarity(String chunk) {
