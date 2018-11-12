@@ -119,66 +119,21 @@ class RequestThread extends Thread {
         while (true) { // This while line should be changed to see if any peers have replied and have break condition?
             // If not currently downloading from any peer,
             for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {
-                String peer = entry.getKey();
-                if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(entry.getValue())) {
+                String peer = new String(entry.getKey());
+                Set<String> peerChunks = new HashSet<>(entry.getValue());
+                if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(peerChunks)) {
                     continue;
                 }
 
-                // Remove chunks in chunkList that are already in chunkMap (the chunks we already have)
-                // We assume that chunks in the chunkMap are in a good format, e.g. "filename/no_of_chunks/chunk_no"
-                Enumeration<String> chunkIter = chunkMap.keys();
-                while (chunkIter.hasMoreElements()) {
-                    String current = chunkIter.nextElement();
-                    String completedChunk = Common.unpackChunk(current, fileName);
-                    if (completedChunk != null){
-                        chunkList.remove(Integer.valueOf(completedChunk));
-                        // .remove still works if value is not in the list.
-                        // .remove is overloaded with (int index) and (Object o), but in this case we are removing
-                        //  an object and Java is smart enough to know that
-                        if (no_of_chunks == 0){
-                            no_of_chunks = Integer.valueOf(current.split("/")[2]);
-                        }
-                    }
-
-                }
-
-                chunkIter = batchMap.keys();
-                while (chunkIter.hasMoreElements()){
-                    String current = chunkIter.nextElement();
-                    String batchChunk = Common.unpackChunk(current, fileName);
-                    if (batchChunk != null){
-                        int chunkIndex = chunkList.indexOf(Integer.valueOf(batchChunk));
-                        if (chunkIndex == -1){
-                            continue;
-                        }
-                        int batchedChunk = chunkList.remove(chunkIndex);
-                        chunkList.add(batchedChunk);
-                    }
-                }
-
-                // We look for the available chunks the peer has,
-                Set<String> peerFiles = entry.getValue();
-//                Set<String> peerChunks = new HashSet<>();
-//                for (String file : peerFiles) {
-//                    String[] parts = file.split("/");
-//                    if (!parts[0].equals(fileName)) {
-//                        continue;
-//                    }
-//                    String[] chunks = parts[2].split(",");
-//                    peerChunks.addAll(Arrays.asList(chunks));
-//                }
-                Set<String> peerChunks = Common.unpackChunks(peerFiles, fileName);
-
                 batch = new HashSet<String>();
                 // then loop through the sorted chunkList and add their available chunk to the batch
-                for (Integer chunk : chunkList) {
-                    if (peerChunks.contains(chunk.toString())) {
-                        String chunkID = fileName + "/" + String.valueOf(no_of_chunks) + "/" + chunk.toString();
-                        batch.add(chunkID);
-                        requestedChunks.add(chunkID);
+                for (int i = 1; i <= batchSize; i++) {
+                    for (String chunkId : peerChunks) {
+                        if (!chunkMap.containsKey(chunkId)) {
+                            batch.add(chunkId);
+                            requestedChunks.add(chunkId);
+                        }
                     }
-                    if (batch.size() > batchSize)
-                        break;
                 }
 
                 // We then send the batch containing the chunks we want.
