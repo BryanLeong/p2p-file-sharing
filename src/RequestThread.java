@@ -33,7 +33,7 @@ class RequestThread extends Thread {
     // Instead of taking peerMap, we can take calculate for each peer his availability of each chunk.
     //  then we sum up all the availabilities of all peers.
     // We also need to handle chunks without seeders.
-    List<Integer> chunkRarity(String fileName) {
+    private List<Integer> chunkRarity(String fileName) {
         int[] occurrences = null;
         // occurrences is an array of size=no_of_chunks, where the index corresponds to the chunk number and
         //  the value corresponds to the availability (number of hosts who own it) of that chunk.
@@ -108,17 +108,14 @@ class RequestThread extends Thread {
     public void run() {
         Set<String> batch;
         int batchSize = 5;
-        String fileName = "";
+        String fileName = "MidTermReview.pdf";
         int no_of_chunks = 0;
 
         // Send 'query' message to broadcast address on startup to discover peers and ask for their list of chunks
         Common.sendQuery(socket, "255.255.255.255");
 
         List<Integer> chunkList = chunkRarity(fileName);
-
-        // Send 'query' message to broadcast address on startup to discover peers and ask for their list of chunks
-        Common.sendQuery(socket, "255.255.255.255");
-
+        
         while (true) { // This while line should be changed to see if any peers have replied and have break condition?
             // If not currently downloading from any peer,
             for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {

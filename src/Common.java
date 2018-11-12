@@ -60,7 +60,7 @@ class Common {
     static String unpackChunk (String data, String fileName) {
         List<String> chunkList = new ArrayList<>();
         String[] parts = data.split("/");
-        if (parts.length != 3 || !parts[0].equals(fileName))
+        if (parts.length != 3)
             return null;
         return parts[2];
     }
@@ -74,7 +74,7 @@ class Common {
         Set<String> chunkSet = new HashSet<>();
         for (String file : data){
             String[] parts = file.split("/");
-            if (parts.length != 3 || !parts[0].equals(fileName))
+            if (parts.length != 3)
                 continue;
             chunkSet.add(parts[2]);
         }
