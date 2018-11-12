@@ -26,7 +26,7 @@ class UploadThread extends Thread {
         for (String chunkId : chunkIds) {
             byte[] chunk = chunkMap.get(chunkId);
             byte[] data = String.format("%s,%s", chunkId, new String(chunk)).getBytes();
-            DatagramPacket packet = new DatagramPacket(data, data.length, address, 8001);
+            DatagramPacket packet = new DatagramPacket(data, data.length, address, 8000);
             try {
                 socket.send(packet);
             } catch (IOException e) {
