@@ -84,8 +84,12 @@ class ListenThread extends Thread {
                 case "list":
                     // Add to peer's list of chunks
                     if (!data[1].isEmpty()) {
-                        synchronized (peerMap.get(peer)) {
-                            peerMap.get(peer).addAll(Arrays.asList(data[1].split(",")));
+                        if (peerMap.containsKey(peer)) {
+                            synchronized (peerMap.get(peer)) {
+                                peerMap.get(peer).addAll(Arrays.asList(data[1].split(",")));
+                            }
+                        } else {
+                            peerMap.put(peer, new HashSet<>());
                         }
                     }
                     break;

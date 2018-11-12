@@ -34,15 +34,13 @@ class RequestThread extends Thread {
 
     public void run() {
         Set<String> batch;
-        int batchSize = 5;
+        int batchSize = 10;
         RequestAlgo calculator = new RequestAlgo(peerMap);
-        String fileName = "MidTermReview.pdf";
-        int no_of_chunks = 0;
 
         // Send 'query' message to broadcast address on startup to discover peers and ask for their list of chunks
         Common.sendQuery(socket, "255.255.255.255");
         
-        while (true) { // This while line should be changed to see if any peers have replied and have break condition?
+        while (true) {
             // If not currently downloading from any peer,
             for (Map.Entry<String, Set<String>> entry : peerMap.entrySet()) {
                 String peer = entry.getKey();
@@ -116,8 +114,9 @@ class RequestThread extends Thread {
 //                    }
 //                }
 
-                // We then send the batch containing the chunks we want.
+                // We then send the batch containing the chunks we want and add the chunkIds to requestedChunks
                 batchMap.put(peer, batch);
+                requestedChunks.addAll(batch);
 
                 // send 'request' message to peer to initiate file transfer
                 Common.sendRequest(socket, peer, batch);
