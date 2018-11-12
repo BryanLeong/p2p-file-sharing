@@ -178,12 +178,14 @@ class RequestThread extends Thread {
                     if (peerChunks.contains(chunk.toString())) {
                         String chunkID = fileName + "/" + String.valueOf(no_of_chunks) + "/" + chunk.toString();
                         batch.add(chunkID);
+                        requestedChunks.add(chunkID);
                     }
                     if (batch.size() > batchSize)
                         break;
                 }
 
                 // We then send the batch containing the chunks we want.
+                batchMap.put(peer, batch);
 
                 // send 'request' message to peer to initiate file transfer
                 Common.sendRequest(socket, peer, batch);
