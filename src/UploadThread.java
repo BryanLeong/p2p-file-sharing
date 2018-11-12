@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 
 class UploadThread extends Thread {
@@ -25,11 +26,20 @@ class UploadThread extends Thread {
     public void run() {
         for (String chunkId : chunkIds) {
             byte[] chunk = chunkMap.get(chunkId);
-            byte[] data = String.format("%s,%s", chunkId, new String(chunk)).getBytes();
+            byte[] chunkIdBytes = chunkId.getBytes();
+
+            ByteBuffer bb = ByteBuffer.allocate(8 + chunk.length + chunkIdBytes.length);
+            bb.putInt(chunkIdBytes.length);
+            bb.putInt(chunk.length);
+            bb.put(chunkIdBytes);
+            bb.put(chunk);
+            byte[] data = bb.array();
+
             DatagramPacket packet = new DatagramPacket(data, data.length, address, 8000);
             try {
                 socket.send(packet);
-            } catch (IOException e) {
+                Thread.sleep(100);
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }

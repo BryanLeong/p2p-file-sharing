@@ -18,16 +18,15 @@ class App {
         CopyOnWriteArrayList<String> requestedChunks = new CopyOnWriteArrayList<>();
         CopyOnWriteArrayList<String> newChunks = new CopyOnWriteArrayList<>();
         CountDownLatch cdl = new CountDownLatch(1);
-        int chunkSize = 1024;
 
         Thread updateThread = new UpdateThread(localAddress, peerMap, newChunks);
         updateThread.start();
-        (new FileIOThread(chunkSize, cdl, updateThread, chunkMap, newChunks)).start();
+        (new FileIOThread(cdl, updateThread, chunkMap, newChunks)).start();
         // wait for FileIOThread to populate chunkMap
         cdl.await();
         (new ListenThread(localAddress, chunkMap, peerMap, peerUpdateMap)).start();
         (new PeerTrackerThread(peerUpdateMap, peerMap, batchMap, requestedChunks)).start();
-        (new DownloadThread(chunkSize, localAddress, updateThread, chunkMap, batchMap, requestedChunks, newChunks)).start();
+        (new DownloadThread(localAddress, updateThread, chunkMap, batchMap, requestedChunks, newChunks)).start();
         (new RequestThread(localAddress, chunkMap, peerMap, batchMap, requestedChunks)).start();
     }
 }

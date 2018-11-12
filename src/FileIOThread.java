@@ -12,15 +12,13 @@ class FileIOThread extends Thread {
     private File folder;
     private List<String> fileNameList;
     private List<File> fileList;
-    private int chunkSize;
     private Thread updateThread;
+    private final int chunkSize = 10000;
 
-    public FileIOThread(int chunkSize,
-                        CountDownLatch cdl,
+    public FileIOThread(CountDownLatch cdl,
                         Thread updateThread,
                         ConcurrentHashMap<String, byte[]> chunkMap,
                         CopyOnWriteArrayList<String> newChunks) {
-        this.chunkSize = chunkSize;
         this.updateThread = updateThread;
         this.chunkMap = chunkMap;
         this.newChunks = newChunks;
@@ -35,11 +33,11 @@ class FileIOThread extends Thread {
         Set<String> newChunks = new HashSet<>();
         for (File file : fileList) {
             String fileName = file.getName();
-            if (fileName.matches("(\\.tmp)$")) {
+            if (fileName.matches("(.+\\.tmp)$")) {
                 try {
                     FileInputStream fis = new FileInputStream(file);
                     ObjectInputStream ois = new ObjectInputStream(fis);
-                    Map<String, byte[]> fileChunks = (ConcurrentHashMap<String, byte[]>) ois.readObject();
+                    Map<String, byte[]> fileChunks = (HashMap<String, byte[]>) ois.readObject();
                     ois.close();
                     fis.close();
                     for (Map.Entry<String, byte[]> entry : fileChunks.entrySet()) {
@@ -115,7 +113,7 @@ class FileIOThread extends Thread {
                                 File tmpFile = new File(fp + ".tmp");
                                 tmpFile.delete();
                             }
-                            FileOutputStream fos = new FileOutputStream(fp);
+                            FileOutputStream fos = new FileOutputStream(fp, true);
                             for (int i = 1; i <= numChunks; i++) {
                                 fos.write(fileChunks.get(s + "/" + i));
                             }
