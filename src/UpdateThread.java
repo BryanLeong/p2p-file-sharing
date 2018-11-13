@@ -27,7 +27,7 @@ class UpdateThread extends Thread{
         while (true) {
             synchronized (newChunks) {
                 for (String peer : peerMap.keySet()) {
-                    Common.sendChunkList(socket, peer, newChunks);
+                    Common.sendChunkList(peerMap, peer, newChunks);
                 }
                 newChunks.clear();
             }
