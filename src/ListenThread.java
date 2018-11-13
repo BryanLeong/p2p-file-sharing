@@ -67,12 +67,12 @@ class ListenThread extends Thread {
                     peerMap.put(peer, new HashSet<>());
                     Common.replyQuery(socket, peer);
                     // Reply with list of available chunks
-                    Common.sendChunkList(peerMap, peer, chunkMap.keySet());
+                    (new SendChunkListThread(peerMap, peer, chunkMap.keySet())).start();
                     break;
                 case "hello":
                     // Peer responded to our query, send list of available chunks
                     peerMap.put(peer, new HashSet<>());
-                    Common.sendChunkList(peerMap, peer, chunkMap.keySet());
+                    (new SendChunkListThread(peerMap, peer, chunkMap.keySet())).start();
                     break;
                 case "request":
                     // Get batch of requested chunks and start new UploadThread to send chunks to requester
