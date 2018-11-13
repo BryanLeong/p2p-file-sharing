@@ -19,7 +19,7 @@ class App {
         CopyOnWriteArrayList<String> newChunks = new CopyOnWriteArrayList<>();
         CountDownLatch cdl = new CountDownLatch(1);
 
-        Thread updateThread = new UpdateThread(localAddress, peerMap, newChunks);
+        Thread updateThread = new UpdateThread(peerMap, newChunks);
         updateThread.start();
         (new FileIOThread(cdl, updateThread, chunkMap, newChunks)).start();
         // wait for FileIOThread to populate chunkMap

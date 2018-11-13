@@ -45,16 +45,16 @@ class Common {
             socket = new DatagramSocket();
             socket.setSoTimeout(1000);
 
-            while (true) {
-                int batchSize = 10;
-                int totalMessages = (int) Math.ceil(1.0 * chunkList.size() / batchSize);
-                int start = 0, end;
-                for (int i = 0; i < totalMessages; i++) {
-                    if (start + batchSize < chunkList.size()) {
-                        end = start + batchSize;
-                    } else {
-                        end = chunkList.size();
-                    }
+            int batchSize = 10;
+            int totalMessages = (int) Math.ceil(1.0 * chunkList.size() / batchSize);
+            int start = 0, end;
+            for (int i = 0; i < totalMessages; i++) {
+                if (start + batchSize < chunkList.size()) {
+                    end = start + batchSize;
+                } else {
+                    end = chunkList.size();
+                }
+                while (true) {
                     sendMessage(socket, peer, "list", chunkList.subList(start, end));
                     byte[] buf = new byte[2048];
                     DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -69,8 +69,8 @@ class Common {
                             break;
                         }
                     }
-                    start += batchSize;
                 }
+                start += batchSize;
             }
         } catch (SocketException e) {
             e.printStackTrace();
@@ -90,7 +90,7 @@ class Common {
     //  e.g. "file.txt/12/1"
     //      "file.txt/12/2"
     //      "file.txt/12/10"
-    static String unpackChunk (String data, String fileName) {
+    static String unpackChunk(String data, String fileName) {
         List<String> chunkList = new ArrayList<>();
         String[] parts = data.split("/");
         if (parts.length != 3)
@@ -103,9 +103,9 @@ class Common {
     //  e.g. "file.txt/12/1"
     //      "file.txt/12/2"
     //      "file.txt/12/10"
-    static Set<String> unpackChunks (Set<String> data, String fileName) {
+    static Set<String> unpackChunks(Set<String> data, String fileName) {
         Set<String> chunkSet = new HashSet<>();
-        for (String file : data){
+        for (String file : data) {
             String[] parts = file.split("/");
             if (parts.length != 3)
                 continue;

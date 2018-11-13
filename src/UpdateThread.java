@@ -1,25 +1,15 @@
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class UpdateThread extends Thread{
-    private DatagramSocket socket;
     private ConcurrentHashMap<String, Set<String>> peerMap;
     private CopyOnWriteArrayList<String> newChunks;
 
-    public UpdateThread(InetAddress localAddress,
-                        ConcurrentHashMap<String, Set<String>> peerMap,
+    public UpdateThread(ConcurrentHashMap<String, Set<String>> peerMap,
                         CopyOnWriteArrayList<String> newChunks) {
         this.peerMap = peerMap;
         this.newChunks = newChunks;
-        try {
-            socket = new DatagramSocket(8003, localAddress);
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
     }
 
     public void run() {

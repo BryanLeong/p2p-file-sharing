@@ -40,7 +40,7 @@ class UploadThread extends Thread {
                 DatagramPacket packet = new DatagramPacket(data, data.length, address, 8000);
                 try {
                     socket.send(packet);
-                    Thread.sleep(20);
+                    Thread.sleep(0 + i * 10);
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
