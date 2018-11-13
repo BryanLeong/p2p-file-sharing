@@ -67,8 +67,8 @@ class RequestAlgo {
                 }
             }
             if (lostChunks.size() > 0) {
-                System.out.println("Lost chunks: ");
-                System.out.println(lostChunks);
+//                System.out.println("Lost chunks: ");
+//                System.out.println(lostChunks);
             }
 
             peerChunks.get(peer).removeAll(lostChunks);
@@ -81,7 +81,7 @@ class RequestAlgo {
                 if (rarityMap.putIfAbsent(newChunk, temp) != null) {
                     rarityMap.get(newChunk).add(peer);
                 }
-                System.out.println("New Chunk: " + newChunk);
+//                System.out.println("New Chunk: " + newChunk);
             }
 
         } else {
@@ -95,6 +95,10 @@ class RequestAlgo {
     }
 
     public Set<String> rarestChunks(Set<String> peerChunks, int batchSize) {
+        return rarestChunks(peerChunks, batchSize, new HashSet<>());
+    }
+
+    public Set<String> rarestChunks(Set<String> peerChunks, int batchSize, Set<String> requestedChunks) {
         int cutoff = Integer.MAX_VALUE;
         // cutoff is the gatekeeper for rarest chunks, it takes the rarity of the chunk most recently eliminated.
 
@@ -104,7 +108,7 @@ class RequestAlgo {
                 // rareChunks not filled yet
                 rareChunks.add(chunk);
             } else {
-                if (rarity(chunk) < cutoff) {
+                if (rarity(chunk, requestedChunks) < cutoff) {
                     // Contender for rarechunks
 
                     // We add the contender to rareChunks then remove the max (most common).
@@ -112,8 +116,8 @@ class RequestAlgo {
                     int maxRarity = 0;
                     rareChunks.add(chunk);
                     for (String rareChunk : rareChunks) {
-                        if (rarity(rareChunk) > maxRarity) {
-                            maxRarity = rarity(rareChunk);
+                        if (rarity(rareChunk, requestedChunks) > maxRarity) {
+                            maxRarity = rarity(rareChunk, requestedChunks);
                             maxChunk = rareChunk;
                         }
                     }
@@ -131,7 +135,10 @@ class RequestAlgo {
         return origChunks;
     }
 
-    private int rarity(String chunk) {
+    private int rarity(String chunk, Set<String> requestedChunks) {
+        if (requestedChunks.contains(chunk)){
+            return Integer.MAX_VALUE;
+        }
         return rarityMap.get(chunk).size();
     }
 

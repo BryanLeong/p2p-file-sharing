@@ -107,6 +107,7 @@ class FileIOThread extends Thread {
 
                     int numChunks = Integer.valueOf(fnc[1]);
                     String fp = "files/" + fnc[0];
+                    System.out.println(fileChunks.size());
                     if (fileChunks.size() == numChunks) {
                         try {
                             if (fileNameList.contains(fnc[0] + ".tmp")) {

@@ -69,8 +69,11 @@ class RequestThread extends Thread {
 
                 batch = new HashSet<String>();
                 // then loop through the sorted chunkList and add their available chunk to the batch
-
-                Set<String> calculatedBatch = calculator.rarestChunks(peerChunks, batchSize);
+                Set<String> requestedSet;
+                synchronized (requestedChunks) {
+                    requestedSet = new HashSet<>(requestedChunks);
+                }
+                Set<String> calculatedBatch = calculator.rarestChunks(peerChunks, batchSize, requestedSet);
                 batch.addAll(calculatedBatch);
 
 //                for (int i = 1; i <= batchSize; i++) {

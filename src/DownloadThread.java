@@ -62,10 +62,13 @@ class DownloadThread extends Thread {
             if (batchMap.get(peer).isEmpty()) {
                 batchMap.remove(peer);
             }
-            requestedChunks.remove(chunkId);
+            synchronized (requestedChunks) {
+                requestedChunks.remove(chunkId);
+            }
             synchronized (newChunks) {
                 newChunks.add(chunkId);
             }
+            System.out.println(chunkId);
 
             if (newChunks.size() >= 10) {
                 if (!updateThread.isInterrupted())

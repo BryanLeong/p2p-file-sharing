@@ -38,7 +38,7 @@ class UploadThread extends Thread {
             DatagramPacket packet = new DatagramPacket(data, data.length, address, 8000);
             try {
                 socket.send(packet);
-                Thread.sleep(100);
+                Thread.sleep(200);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
