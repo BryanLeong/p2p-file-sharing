@@ -3,6 +3,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
 class UploadThread extends Thread {
@@ -55,7 +57,8 @@ class UploadThread extends Thread {
                 }
             } catch (IOException e) {
                 // timed-out and did not receive ack so we resend the whole batch
-                System.out.printf("No ACK received from " + address.getHostAddress());
+                Timestamp ts = new Timestamp((new Date()).getTime());
+                System.out.printf("[" + ts.toString() + "] No ACK received from " + address.getHostAddress());
                 if (i != 9) {
                     System.out.println(": Resending batch with interval " + (i + 1) * 10 + "...");
                 } else {
