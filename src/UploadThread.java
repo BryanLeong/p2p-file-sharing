@@ -17,6 +17,7 @@ class UploadThread extends Thread {
         this.chunkIds = chunkIds;
         try {
             socket = new DatagramSocket();
+            socket.setSoTimeout(1000);
             this.address = InetAddress.getByName(address);
         } catch (IOException e) {
             e.printStackTrace();
@@ -24,24 +25,44 @@ class UploadThread extends Thread {
     }
 
     public void run() {
-        for (String chunkId : chunkIds) {
-            byte[] chunk = chunkMap.get(chunkId);
-            byte[] chunkIdBytes = chunkId.getBytes();
+        for (int i = 0; i < 10; i++) {
+            for (String chunkId : chunkIds) {
+                byte[] chunk = chunkMap.get(chunkId);
+                byte[] chunkIdBytes = chunkId.getBytes();
 
-            ByteBuffer bb = ByteBuffer.allocate(8 + chunk.length + chunkIdBytes.length);
-            bb.putInt(chunkIdBytes.length);
-            bb.putInt(chunk.length);
-            bb.put(chunkIdBytes);
-            bb.put(chunk);
-            byte[] data = bb.array();
+                ByteBuffer bb = ByteBuffer.allocate(8 + chunk.length + chunkIdBytes.length);
+                bb.putInt(chunkIdBytes.length);
+                bb.putInt(chunk.length);
+                bb.put(chunkIdBytes);
+                bb.put(chunk);
+                byte[] data = bb.array();
 
-            DatagramPacket packet = new DatagramPacket(data, data.length, address, 8000);
+                DatagramPacket packet = new DatagramPacket(data, data.length, address, 8000);
+                try {
+                    socket.send(packet);
+                    Thread.sleep(20);
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            byte[] buf = new byte[2048];
+            DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
-                socket.send(packet);
-                Thread.sleep(200);
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+                socket.receive(packet);
+                if ((new String(packet.getData())).contains("ack")) {
+                    break;
+                }
+            } catch (IOException e) {
+                // timed-out and did not receive ack so we resend the whole batch
+                System.out.printf("No ACK received from " + address.getHostAddress());
+                if (i != 9) {
+                    System.out.println(": Resending batch with interval " + (i + 1) * 10 + "...");
+                } else {
+                    System.out.println(": Max retries reached.");
+                }
             }
         }
+
     }
 }

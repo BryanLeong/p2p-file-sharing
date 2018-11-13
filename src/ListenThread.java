@@ -57,9 +57,9 @@ class ListenThread extends Thread {
                 peerUpdateMap.put(peer, new Date());
             }
 
-            System.out.println("Received packet from: " + peer);
-            System.out.println("Packet type: " + data[0]);
-            System.out.println("Data: " + data[1] + "\n");
+//            System.out.println("Received packet from: " + peer);
+//            System.out.println("Packet type: " + data[0]);
+//            System.out.println("Data: " + data[1] + "\n");
 
             switch (data[0]) {
                 case "query":
@@ -67,12 +67,12 @@ class ListenThread extends Thread {
                     peerMap.put(peer, new HashSet<>());
                     Common.replyQuery(socket, peer);
                     // Reply with list of available chunks
-                    Common.sendChunkList(socket, peer, chunkMap.keySet());
+                    Common.sendChunkList(peerMap, peer, chunkMap.keySet());
                     break;
                 case "hello":
                     // Peer responded to our query, send list of available chunks
                     peerMap.put(peer, new HashSet<>());
-                    Common.sendChunkList(socket, peer, chunkMap.keySet());
+                    Common.sendChunkList(peerMap, peer, chunkMap.keySet());
                     break;
                 case "request":
                     // Get batch of requested chunks and start new UploadThread to send chunks to requester
@@ -92,6 +92,7 @@ class ListenThread extends Thread {
                             peerMap.put(peer, new HashSet<>());
                         }
                     }
+                    Common.sendAck(socket, peer, packet.getPort());
                     break;
                 default:
                     break;

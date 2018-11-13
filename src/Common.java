@@ -2,10 +2,16 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 class Common {
     private static void sendMessage(DatagramSocket socket, String peer, String type, List<String> data) {
+        sendMessage(socket, peer, 8001, type, data);
+    }
+
+    private static void sendMessage(DatagramSocket socket, String peer, int port, String type, List<String> data) {
         String msg = type + ",";
         if (data != null) {
             msg += String.join(",", data);
@@ -13,7 +19,7 @@ class Common {
         byte[] msgBytes = msg.getBytes();
         try {
             InetAddress address = InetAddress.getByName(peer);
-            DatagramPacket packet = new DatagramPacket(msgBytes, msgBytes.length, address, 8001);
+            DatagramPacket packet = new DatagramPacket(msgBytes, msgBytes.length, address, port);
             socket.send(packet);
         } catch (IOException e) {
             e.printStackTrace();
@@ -28,28 +34,55 @@ class Common {
         sendMessage(socket, peer, "hello", null);
     }
 
-    static void sendChunkList(DatagramSocket socket, String peer, Set<String> chunkSet) {
+    static void sendChunkList(ConcurrentHashMap<String, Set<String>> peerMap, String peer, Set<String> chunkSet) {
         List<String> chunkList = new ArrayList<>(chunkSet);
-        sendChunkList(socket, peer, chunkList);
+        sendChunkList(peerMap, peer, chunkList);
     }
 
-    static void sendChunkList(DatagramSocket socket, String peer, List<String> chunkList) {
-        int batchSize = 10;
-        int totalMessages = (int) Math.ceil(1.0 * chunkList.size() / batchSize);
-        int start = 0, end;
-        for (int i = 0; i < totalMessages; i++) {
-            if (start + batchSize < chunkList.size()) {
-                end = start + batchSize;
-            } else {
-                end = chunkList.size();
+    static void sendChunkList(ConcurrentHashMap<String, Set<String>> peerMap, String peer, List<String> chunkList) {
+        DatagramSocket socket;
+        try {
+            socket = new DatagramSocket();
+            socket.setSoTimeout(1000);
+
+            while (true) {
+                int batchSize = 10;
+                int totalMessages = (int) Math.ceil(1.0 * chunkList.size() / batchSize);
+                int start = 0, end;
+                for (int i = 0; i < totalMessages; i++) {
+                    if (start + batchSize < chunkList.size()) {
+                        end = start + batchSize;
+                    } else {
+                        end = chunkList.size();
+                    }
+                    sendMessage(socket, peer, "list", chunkList.subList(start, end));
+                    byte[] buf = new byte[2048];
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                    try {
+                        socket.receive(packet);
+                        if ((new String(packet.getData())).contains("ack")) {
+                            break;
+                        }
+                    } catch (IOException e) {
+                        // timed-out and did not receive ack
+                        if (!peerMap.containsKey(peer)) {
+                            break;
+                        }
+                    }
+                    start += batchSize;
+                }
             }
-            sendMessage(socket, peer, "list", chunkList.subList(start, end));
-            start += batchSize;
+        } catch (SocketException e) {
+            e.printStackTrace();
         }
     }
 
     static void sendRequest(DatagramSocket socket, String peer, Set<String> chunkSet) {
         sendMessage(socket, peer, "request", new ArrayList<>(chunkSet));
+    }
+
+    static void sendAck(DatagramSocket socket, String peer, int port) {
+        sendMessage(socket, peer, port, "ack", null);
     }
 
     // Returns null if filename is wrong

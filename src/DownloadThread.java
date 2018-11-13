@@ -57,10 +57,15 @@ class DownloadThread extends Thread {
             bb.get(data, 0, dataLength);
             String chunkId = new String(chunkIdBytes);
 
+            if (chunkMap.containsKey(chunkId)) {
+                continue;
+            }
+
             chunkMap.putIfAbsent(chunkId, data);
             batchMap.get(peer).remove(chunkId);
             if (batchMap.get(peer).isEmpty()) {
                 batchMap.remove(peer);
+                Common.sendAck(socket, peer, packet.getPort());
             }
             synchronized (requestedChunks) {
                 requestedChunks.remove(chunkId);
@@ -68,7 +73,6 @@ class DownloadThread extends Thread {
             synchronized (newChunks) {
                 newChunks.add(chunkId);
             }
-            System.out.println(chunkId);
 
             if (newChunks.size() >= 10) {
                 if (!updateThread.isInterrupted())

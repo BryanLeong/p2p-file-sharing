@@ -107,8 +107,8 @@ class FileIOThread extends Thread {
 
                     int numChunks = Integer.valueOf(fnc[1]);
                     String fp = "files/" + fnc[0];
-                    System.out.println(fileChunks.size());
                     if (fileChunks.size() == numChunks) {
+                        System.out.println("File " + fnc[0] + " completed. Saving to disk...");
                         try {
                             if (fileNameList.contains(fnc[0] + ".tmp")) {
                                 File tmpFile = new File(fp + ".tmp");
