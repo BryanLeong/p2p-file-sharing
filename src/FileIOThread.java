@@ -6,6 +6,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
+// FileIOThread is responsible for any operation on the physical files inside the files folder
 class FileIOThread extends Thread {
     private ConcurrentHashMap<String, byte[]> chunkMap;
     private CopyOnWriteArrayList<String> newChunks;
@@ -29,11 +30,13 @@ class FileIOThread extends Thread {
         cdl.countDown();
     }
 
+    // method to read the files from disk, split them into chunks and populate chunkMap
     private Set<String> populateChunkMap() {
         Set<String> newChunks = new HashSet<>();
         for (File file : fileList) {
             String fileName = file.getName();
             if (fileName.matches("(.+\\.tmp)$")) {
+                // if the file is a .tmp file, read it as a HashMap and add its keys and values to chunkMap
                 try {
                     FileInputStream fis = new FileInputStream(file);
                     ObjectInputStream ois = new ObjectInputStream(fis);
@@ -51,6 +54,7 @@ class FileIOThread extends Thread {
                     e.printStackTrace();
                 }
             } else {
+                // if it is a regular file, read all bytes, split the bytes into chunks and put them in chunkMap
                 try {
                     byte[] fileBytes = Files.readAllBytes(file.toPath());
                     int totalChunks = (int) Math.ceil(1.0 * fileBytes.length / chunkSize);
@@ -100,6 +104,7 @@ class FileIOThread extends Thread {
             for (String s : new HashSet<>(keyList)) {
                 String[] fnc = s.split("/");
 
+                // check for files that are in our chunkMap but not on disk (i.e. downloaded from other peers)
                 if (!fileNameList.contains(fnc[0])) {
                     Map<String, byte[]> fileChunks = chunkMap.entrySet().stream()
                             .filter(entry -> entry.getKey().contains(fnc[0]))
@@ -107,7 +112,7 @@ class FileIOThread extends Thread {
 
                     int numChunks = Integer.valueOf(fnc[1]);
                     String fp = "files/" + fnc[0];
-                    if (fileChunks.size() == numChunks) {
+                    if (fileChunks.size() == numChunks) {  // check for all chunks of a file
                         System.out.println("File " + fnc[0] + " completed. Saving to disk...");
                         try {
                             if (fileNameList.contains(fnc[0] + ".tmp")) {
@@ -122,7 +127,7 @@ class FileIOThread extends Thread {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                    } else {
+                    } else {  // if we do not have all chunks, write the data to a .tmp file
                         try {
                             FileOutputStream fos = new FileOutputStream(fp + ".tmp");
                             ObjectOutputStream oos = new ObjectOutputStream(fos);

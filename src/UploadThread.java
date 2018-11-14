@@ -7,6 +7,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
+// UploadThread is spawned whenever a peer requests a new batch from us
 class UploadThread extends Thread {
     private DatagramSocket socket;
     private InetAddress address;
@@ -27,8 +28,9 @@ class UploadThread extends Thread {
     }
 
     public void run() {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {  // Try sending for a maximum of 10 times
             for (String chunkId : chunkIds) {
+                // Arrange the data in an appropriate format
                 byte[] chunk = chunkMap.get(chunkId);
                 byte[] chunkIdBytes = chunkId.getBytes();
 
@@ -40,6 +42,10 @@ class UploadThread extends Thread {
                 byte[] data = bb.array();
 
                 DatagramPacket packet = new DatagramPacket(data, data.length, address, 8000);
+
+                // Send the packets at an interval which can be increased
+                // This allows us to resend the batch at a slower rate if the peer does not ACK the whole batch
+                // (i.e. some packets were dropped)
                 try {
                     socket.send(packet);
                     Thread.sleep(0 + i * 10);

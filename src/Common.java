@@ -6,6 +6,7 @@ import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+// this class contains a number of static functions that are used in more than 1 thread
 class Common {
     private static void sendMessage(DatagramSocket socket, String peer, String type, List<String> data) {
         sendMessage(socket, peer, 8001, type, data);
@@ -32,11 +33,6 @@ class Common {
 
     static void replyQuery(DatagramSocket socket, String peer) {
         sendMessage(socket, peer, "hello", null);
-    }
-
-    static void sendChunkList(ConcurrentHashMap<String, Set<String>> peerMap, String peer, Set<String> chunkSet) {
-        List<String> chunkList = new ArrayList<>(chunkSet);
-        sendChunkList(peerMap, peer, chunkList);
     }
 
     static void sendChunkList(ConcurrentHashMap<String, Set<String>> peerMap, String peer, List<String> chunkList) {
@@ -83,35 +79,6 @@ class Common {
 
     static void sendAck(DatagramSocket socket, String peer, int port) {
         sendMessage(socket, peer, port, "ack", null);
-    }
-
-    // Returns null if filename is wrong
-    // Assuming data is in the form "filename/no_of_chunks/chunks"
-    //  e.g. "file.txt/12/1"
-    //      "file.txt/12/2"
-    //      "file.txt/12/10"
-    static String unpackChunk(String data, String fileName) {
-        List<String> chunkList = new ArrayList<>();
-        String[] parts = data.split("/");
-        if (parts.length != 3)
-            return null;
-        return parts[2];
-    }
-
-    // Should be used more often than the one on top
-    // Assuming data is in the form "filename/no_of_chunks/chunks"
-    //  e.g. "file.txt/12/1"
-    //      "file.txt/12/2"
-    //      "file.txt/12/10"
-    static Set<String> unpackChunks(Set<String> data, String fileName) {
-        Set<String> chunkSet = new HashSet<>();
-        for (String file : data) {
-            String[] parts = file.split("/");
-            if (parts.length != 3)
-                continue;
-            chunkSet.add(parts[2]);
-        }
-        return chunkSet;
     }
 
     static Set<String> removeRepeats(Set<String> originalChunks, Set<String> inputs) {

@@ -2,7 +2,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 class RequestAlgo {
-
     // keys of rarityMap is chunkId, value is set of peers
     // to compare rarity we can use .length on the set.
     HashMap<String, Set<String>> rarityMap;
@@ -67,8 +66,6 @@ class RequestAlgo {
                 }
             }
             if (lostChunks.size() > 0) {
-//                System.out.println("Lost chunks: ");
-//                System.out.println(lostChunks);
             }
 
             peerChunks.get(peer).removeAll(lostChunks);
@@ -81,21 +78,12 @@ class RequestAlgo {
                 if (rarityMap.putIfAbsent(newChunk, temp) != null) {
                     rarityMap.get(newChunk).add(peer);
                 }
-//                System.out.println("New Chunk: " + newChunk);
             }
 
         } else {
             peerChunks.put(peer, chunks);
             buildRarityMap(peer, chunks);
         }
-    }
-
-    public Set<String> rarestChunks(String peer) {
-        return rarestChunks(peerChunks.get(peer), 5);
-    }
-
-    public Set<String> rarestChunks(Set<String> peerChunks, int batchSize) {
-        return rarestChunks(peerChunks, batchSize, new HashSet<>());
     }
 
     public Set<String> rarestChunks(Set<String> peerChunks, int batchSize, Set<String> requestedChunks) {
@@ -129,50 +117,10 @@ class RequestAlgo {
         return rareChunks;
     }
 
-    private Set<String> removeRepeats(Set<String> originalChunks, Set<String> inputs) {
-        Set<String> origChunks = new HashSet<>(originalChunks);
-        origChunks.removeAll(inputs);
-        return origChunks;
-    }
-
     private int rarity(String chunk, Set<String> requestedChunks) {
         if (requestedChunks.contains(chunk)){
             return Integer.MAX_VALUE;
         }
         return rarityMap.get(chunk).size();
     }
-
-    public static void main(String[] args) {
-        ConcurrentHashMap<String, Set<String>> peerMap = new ConcurrentHashMap<>();
-        Set<String> testSet = new HashSet<>();
-        Set<String> testSet2 = new HashSet<>();
-        testSet.add("a/8/1");
-        testSet.add("a/8/2");
-        testSet.add("a/8/3");
-        testSet.add("a/8/6");
-        testSet.add("a/8/7");
-        testSet.add("a/8/8");
-
-        testSet2.add("a/8/2");
-        testSet2.add("a/8/3");
-        testSet2.add("a/8/4");
-        testSet2.add("a/8/5");
-        testSet2.add("a/8/6");
-        testSet2.add("a/8/7");
-        peerMap.put("123", testSet);
-        peerMap.put("321", testSet2);
-
-        RequestAlgo testalgo = new RequestAlgo(peerMap);
-//        System.out.println(testalgo.rarestChunks("123"));
-//        System.out.println(testalgo.rarestChunks("321"));
-//        System.out.println(testSet);
-        testalgo.updatePeer("123", testSet2);
-//        System.out.println(testSet);
-        testalgo.updatePeer("321", testSet);
-        System.out.println(testalgo.peerChunks.get("321"));
-//        System.out.println(testSet);
-//        System.out.println(testalgo.rarestChunks("123"));
-//        System.out.println(testalgo.rarestChunks("321"));
-    }
-
 }

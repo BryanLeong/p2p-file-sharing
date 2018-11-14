@@ -4,13 +4,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+// RequestThread is responsible for asking other peers for the chunks that we need
 class RequestThread extends Thread {
     private DatagramSocket socket;
     private ConcurrentHashMap<String, byte[]> chunkMap;
     private ConcurrentHashMap<String, Set<String>> peerMap;
     private ConcurrentHashMap<String, Set<String>> batchMap;
     private CopyOnWriteArrayList<String> requestedChunks;
-
 
     public RequestThread(InetAddress localAddress,
                          ConcurrentHashMap<String, byte[]> chunkMap,
@@ -27,9 +27,6 @@ class RequestThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) {
     }
 
     public void run() {
@@ -50,6 +47,7 @@ class RequestThread extends Thread {
                 }
                 calculator.updatePeer(peer, peerChunks);
 
+                // Skip this peer if we are already downloading from it or we have all the chunks it has
                 if (batchMap.containsKey(peer) || chunkMap.keySet().containsAll(peerChunks)) {
                     continue;
                 }
@@ -75,47 +73,6 @@ class RequestThread extends Thread {
                 }
                 Set<String> calculatedBatch = calculator.rarestChunks(peerChunks, batchSize, requestedSet);
                 batch.addAll(calculatedBatch);
-
-//                for (int i = 1; i <= batchSize; i++) {
-//                    for (String chunkId : peerChunks) {
-//                        if (!chunkMap.containsKey(chunkId)) {
-//                            batch.add(chunkId);
-//                            requestedChunks.add(chunkId);
-//                        }
-//                    }
-//                }
-
-//                // Remove chunks in chunkList that are already in chunkMap (the chunks we already have)
-//                // We assume that chunks in the chunkMap are in a good format, e.g. "filename/no_of_chunks/chunk_no"
-//                Enumeration<String> chunkIter = chunkMap.keys();
-//                while (chunkIter.hasMoreElements()) {
-//                    String current = chunkIter.nextElement();
-//                    String completedChunk = Common.unpackChunk(current, fileName);
-//                    if (completedChunk != null){
-//                        chunkList.remove(Integer.valueOf(completedChunk));
-//                        // .remove still works if value is not in the list.
-//                        // .remove is overloaded with (int index) and (Object o), but in this case we are removing
-//                        //  an object and Java is smart enough to know that
-//                        if (no_of_chunks == 0){
-//                            no_of_chunks = Integer.valueOf(current.split("/")[2]);
-//                        }
-//                    }
-//
-//                }
-//
-//                chunkIter = batchMap.keys();
-//                while (chunkIter.hasMoreElements()){
-//                    String current = chunkIter.nextElement();
-//                    String batchChunk = Common.unpackChunk(current, fileName);
-//                    if (batchChunk != null){
-//                        int chunkIndex = chunkList.indexOf(Integer.valueOf(batchChunk));
-//                        if (chunkIndex == -1){
-//                            continue;
-//                        }
-//                        int batchedChunk = chunkList.remove(chunkIndex);
-//                        chunkList.add(batchedChunk);
-//                    }
-//                }
 
                 // We then send the batch containing the chunks we want and add the chunkIds to requestedChunks
                 batchMap.put(peer, batch);

@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 
+// ListenThread is responsible for listening to control packets from other peers
 class ListenThread extends Thread {
     private DatagramSocket socket;
     private InetAddress localAddress;
@@ -35,7 +36,7 @@ class ListenThread extends Thread {
         String[] data;
         DatagramPacket packet;
 
-        while (true) {
+        while (true) {  // keep listening for packets
             byte[] buf = new byte[2048];
             packet = new DatagramPacket(buf, buf.length);
             try {
@@ -56,10 +57,6 @@ class ListenThread extends Thread {
             } else {
                 peerUpdateMap.put(peer, new Date());
             }
-
-//            System.out.println("Received packet from: " + peer);
-//            System.out.println("Packet type: " + data[0]);
-//            System.out.println("Data: " + data[1] + "\n");
 
             switch (data[0]) {
                 case "query":
