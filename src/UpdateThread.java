@@ -1,3 +1,4 @@
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,7 +18,7 @@ class UpdateThread extends Thread{
         while (true) {
             synchronized (newChunks) {
                 for (String peer : peerMap.keySet()) {
-                    Common.sendChunkList(peerMap, peer, newChunks);
+                    (new SendChunkListThread(peerMap, peer, new HashSet<>(newChunks))).start();
                 }
                 newChunks.clear();
             }
